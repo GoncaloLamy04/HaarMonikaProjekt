@@ -1,4 +1,4 @@
-package Enums;
+package domain;
 
 public enum AppointmentStatus {
     ACTIVE,

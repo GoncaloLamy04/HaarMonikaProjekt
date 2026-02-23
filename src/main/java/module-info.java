@@ -6,6 +6,6 @@ module com.example.haarmonikaprojekt {
 
     opens com.example.haarmonikaprojekt to javafx.fxml;
     exports com.example.haarmonikaprojekt;
-    exports Controllers;
-    opens Controllers to javafx.fxml;
+    exports ui;
+    opens ui to javafx.fxml;
 }
