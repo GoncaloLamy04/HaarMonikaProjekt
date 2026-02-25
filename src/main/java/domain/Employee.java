@@ -24,4 +24,9 @@ public class Employee {
     public String getRole(){return role;}
     public void setRole(){this.role = role;}
 
+
+    @Override
+    public String toString(){
+        return  "Employee{name='" + name + "', email='" + email + "', role=" + role + "', id=" + id_e + "}";
+    }
 }

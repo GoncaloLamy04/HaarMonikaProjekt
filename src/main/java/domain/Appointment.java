@@ -1,27 +1,48 @@
 package domain;
 
+import java.time.LocalDateTime;
+
 public class Appointment {
-    private String customerid;
+    private int appointmentId;
+    private int customerId;
     private String email;
     private String name;
-    private int Employee;
+    private boolean cancelled;
 
-    public Appointment(String customerid, String email, String name, int Employee){
-        this.customerid = customerid;
+    private LocalDateTime startTime;
+
+
+
+    public Appointment(String email, String name, int appointmentId , LocalDateTime startTime, int customerId){
+        this.appointmentId = appointmentId;
         this.email = email;
         this.name = name;
-        this.Employee = Employee;
+        this.cancelled = false;
+        this.startTime = startTime;
+        this.customerId = customerId;
+
     }
 
-    public String getCustomerid(){return customerid;}
-    public void setCustomerid(){this.customerid = customerid;}
+    public int getAppointmentId(){return appointmentId;}
+    public void setAppointmentId(int appointmentId) {this.appointmentId = appointmentId;}
 
-    public String getemail(){return email;}
-    public void setEmail(){this.email = email;}
+    public String getEmail(){return email;}
+    public void setEmail(String email){this.email = email;}
 
-    public String getname(){return name;}
-    public void setname(){this.name = name;}
+    public String getName(){return name;}
+    public void setName(String name){this.name = name;}
 
-    public int getEmployee(){return Employee;}
-    public void setEmployee(){this.Employee = Employee;}
+    public int getCustomerId(){return customerId;}
+    public void setCustomerId(){this.customerId = customerId;}
+
+    public boolean isCancelled(){return cancelled;}
+    public void setCancelled(boolean cancelled){this.cancelled = cancelled;}
+
+    public LocalDateTime getStarTime(){return startTime;}
+    public void setStartTime(){this.startTime = startTime;}
+
+    @Override
+    public String toString(){
+        return "";
+    }
 }
