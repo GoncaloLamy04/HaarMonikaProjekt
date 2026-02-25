@@ -1,16 +1,16 @@
 package domain;
 
 public class Treatment {
-    private int time;
+    private int id;
     private String treatmentType;
 
     public Treatment(int time, String treatmentType){
-        this.time = time;
+        this.id = id;
         this.treatmentType = treatmentType;
     }
 
-    public int getTime(){return time;}
-    public void setTime(){this.time = time;}
+    public int getTime(){return id;}
+    public void setTime(){this.id = id;}
 
     public String getTreatmentType(){return treatmentType;}
     public void setTreatmentType(){this.treatmentType = treatmentType;}
@@ -18,6 +18,6 @@ public class Treatment {
 
     @Override
     public String toString(){
-        return "Treatment{" + treatmentType + "," + time + "}";
+        return "Treatment{" + treatmentType + "," + id + "}";
     }
 }
