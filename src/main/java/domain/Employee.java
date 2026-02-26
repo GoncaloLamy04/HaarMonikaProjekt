@@ -1,32 +1,26 @@
 package domain;
 
 public class Employee {
-    private int id_e;
+
+    private int id;
     private String name;
     private String email;
     private String role;
 
-    public Employee(int id_e, String name, String email, String role){
-        this.id_e = id_e;
+    public Employee(int id, String name, String email, String role) {
+        this.id = id;
         this.name = name;
         this.email = email;
         this.role = role;
     }
-    public String getName(){return name;}
-    public void setName(){this.name = name;}
 
-    public String getEmail(){return email;}
-    public void setEmail(){this.email = email;}
-
-    public int getId_e(){return id_e;}
-    public void setId_e(){this.id_e = id_e;}
-
-    public String getRole(){return role;}
-    public void setRole(){this.role = role;}
-
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public String getEmail() { return email; }
+    public String getRole() { return role; }
 
     @Override
-    public String toString(){
-        return  "Employee{name='" + name + "', email='" + email + "', role=" + role + "', id=" + id_e + "}";
+    public String toString() {
+        return "Employee{id=" + id + ", name='" + name + "', role='" + role + "'}";
     }
 }
