@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import service.EmployeeService;
 import ui.LoginController;
+import ui.MainMenuController;
 
 public class HaarmonikaApplication extends Application {
 
@@ -24,14 +25,10 @@ public class HaarmonikaApplication extends Application {
 
         // Inject service i controller
         loader.setControllerFactory(type -> {
-            if (type == LoginController.class) {
-                return new LoginController(employeeService);
-            }
-            try {
-                return type.getDeclaredConstructor().newInstance();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            if (type == LoginController.class) return new LoginController(employeeService);
+            if (type == MainMenuController.class) return new MainMenuController(employeeService);
+            try { return type.getDeclaredConstructor().newInstance(); }
+            catch (Exception e) { throw new RuntimeException(e); }
         });
 
         Scene scene = new Scene(loader.load());

@@ -23,7 +23,7 @@ target/
 .sts4-cache
 
 ## DB ##
-db.properties
+src/main/resources/db.properties
 
 ### NetBeans ###
 /nbproject/private/

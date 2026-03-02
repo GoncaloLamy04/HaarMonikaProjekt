@@ -2,10 +2,10 @@ package domain;
 
 public class Employee {
 
-    private int id;
-    private String name;
-    private String email;
-    private String role;
+    private final int id;
+    private final String name;
+    private final String email;
+    private final String role;
 
     public Employee(int id, String name, String email, String role) {
         this.id = id;
