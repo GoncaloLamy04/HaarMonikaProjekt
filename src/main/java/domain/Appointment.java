@@ -69,4 +69,9 @@ public class Appointment {
     public void cancel() {
         this.cancelled = true;
     }
+
+    // Bruges kun af SQLAppointmentRepository til at genskabe DB-tilstand
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
 }
