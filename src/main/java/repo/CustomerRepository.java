@@ -5,6 +5,8 @@ import domain.Customer;
 import java.util.List;
 import java.util.Optional;
 
+// Persistens port til Customer
+
 public interface CustomerRepository {
     List<Customer> findAll();
     Optional<Customer> findByEmail(String email);
