@@ -25,7 +25,7 @@ public class Appointment {
         this(appointmentId, customerId, employeeId, email, name, startTime, durationMinutes, List.of());
     }
 
-    // Ny ctor som UI/Service kan bruge
+    // Ny actor som UI/Service kan bruge
     public Appointment(int appointmentId, int customerId, int employeeId,
                        String email, String name,
                        LocalDateTime startTime, int durationMinutes,
