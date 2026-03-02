@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
-// Forretningsregler for bookinger: valider input, undgå overlap, deleger persistence til repo.
+// Service-lag: håndterer forretningsregler for bookinger.
+// Validerer input, tjekker overlap og delegerer til AppointmentRepository.
 public class AppointmentService {
 
     private final AppointmentRepository repo;

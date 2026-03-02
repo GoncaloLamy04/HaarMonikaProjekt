@@ -1,6 +1,7 @@
 package repo;
 
 import domain.Appointment;
+import domain.Employee;
 
 import java.time.LocalDateTime;
 import java.util.List;

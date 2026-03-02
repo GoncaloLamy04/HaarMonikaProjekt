@@ -2,14 +2,15 @@ package domain;
 
 public class Customer {
 
+    private final int id;
     private final String name;
     private final String email;
-    private final int id;
 
-    public Customer(String email, String name, int id){
+    public Customer(int id, String name, String email){
+        this.id = id;
         this.name = name;
         this.email = email;
-        this.id = id;
+
     }
 
     public String getName(){ return name; }
