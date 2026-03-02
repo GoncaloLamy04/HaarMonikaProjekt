@@ -1,7 +1,5 @@
 package domain;
 
-import java.util.Objects;
-
 public class Treatment {
     private final String treatmentType;
     private final int durationMinutes;

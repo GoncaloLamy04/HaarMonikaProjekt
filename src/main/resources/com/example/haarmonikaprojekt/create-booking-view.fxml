@@ -11,50 +11,47 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.CreateBookingController">
+<AnchorPane prefHeight="450.0" prefWidth="620.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.CreateBookingController">
    <children>
-      <HBox layoutY="151.0" prefHeight="262.0" prefWidth="614.0">
+      <VBox spacing="10.0" AnchorPane.topAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.bottomAnchor="10.0">
          <children>
-            <TableView prefHeight="251.0" prefWidth="614.0">
-              <columns>
-                <TableColumn fx:id="colId" prefWidth="100.0" text="Id" />
-                <TableColumn fx:id="colName" prefWidth="100.0" text="Name" />
-                  <TableColumn fx:id="colEmail" prefWidth="100.0" text="Email" />
-                  <TableColumn fx:id="colTreatment" prefWidth="100.0" text="Treatment" />
-                  <TableColumn fx:id="colTime" prefWidth="100.0" text="Time" />
-                  <TableColumn fx:id="colDuration" prefWidth="113.5999816894531" text="Duration" />
-              </columns>
+
+            <!-- Inputfelter i en række -->
+            <HBox spacing="10.0">
+               <children>
+                  <TextField fx:id="nameTxt" prefWidth="110.0" promptText="Navn"/>
+                  <TextField fx:id="emailTxt" prefWidth="120.0" promptText="Email"/>
+                  <TextField fx:id="durationTxt" prefWidth="110.0" promptText="Varighed (min)"/>
+                  <TextField fx:id="treatmentTxt" prefWidth="100.0" promptText="Behandling"/>
+                  <DatePicker fx:id="timeDate" prefWidth="140.0" promptText="Dato"/>
+               </children>
+            </HBox>
+
+            <!-- Knapper i en række -->
+            <HBox spacing="10.0">
+               <children>
+                  <Button fx:id="createButton" mnemonicParsing="false" text="Opret booking" prefWidth="130.0"/>
+                  <Button fx:id="changeButton" mnemonicParsing="false" text="Ret booking" prefWidth="130.0"/>
+                  <Button fx:id="deleteButton" mnemonicParsing="false" text="Aflys booking" prefWidth="130.0"/>
+               </children>
+            </HBox>
+
+            <!-- Fejlbesked -->
+            <Label fx:id="labelException" textFill="red"/>
+
+            <!-- Tabel fylder resten -->
+            <TableView fx:id="appointmentTable" VBox.vgrow="ALWAYS">
+               <columns>
+                  <TableColumn fx:id="colId" text="Id"/>
+                  <TableColumn fx:id="colName" text="Navn"/>
+                  <TableColumn fx:id="colEmail" text="Email"/>
+                  <TableColumn fx:id="colTreatment" text="Behandling"/>
+                  <TableColumn fx:id="colTime" text="Tid"/>
+                  <TableColumn fx:id="colDuration" text="Varighed"/>
+               </columns>
             </TableView>
-         </children>
-      </HBox>
-      <Label fx:id="labelException" layoutX="14.0" layoutY="90.0" AnchorPane.topAnchor="100.0" />
-      <VBox layoutX="-1.0" layoutY="-3.0" prefHeight="154.0" prefWidth="194.0" AnchorPane.leftAnchor="-1.0">
-         <children>
-            <TextField fx:id="nameTxt" maxWidth="-Infinity" prefWidth="150.0" promptText="Name">
-               <VBox.margin>
-                  <Insets left="5.0" top="20.0" />
-               </VBox.margin>
-            </TextField>
-            <TextField fx:id="emailTxt" maxWidth="-Infinity" prefWidth="150.0" promptText="Email">
-               <VBox.margin>
-                  <Insets left="5.0" top="10.0" />
-               </VBox.margin>
-            </TextField>
-            <TextField fx:id="durationTxt" maxWidth="-Infinity" prefWidth="150.0" promptText="Duration">
-               <VBox.margin>
-                  <Insets left="5.0" top="10.0" />
-               </VBox.margin>
-            </TextField>
-            <TextField fx:id="treatmentTxt" maxWidth="-Infinity" prefWidth="150.0" promptText="Treatment">
-               <VBox.margin>
-                  <Insets left="5.0" top="10.0" />
-               </VBox.margin>
-            </TextField>
+
          </children>
       </VBox>
-      <Button fx:id="createButton" layoutX="169.0" layoutY="25.0" mnemonicParsing="false" text="Create Booking" AnchorPane.leftAnchor="169.0" />
-      <DatePicker fx:id="timeDate" layoutX="169.0" layoutY="125.0" />
-      <Button fx:id="changeButton" layoutX="319.0" layoutY="25.0" mnemonicParsing="false" text="Change Booking" AnchorPane.rightAnchor="191.39999999999998" />
-      <Button fx:id="deleteButton" layoutX="484.0" layoutY="25.0" mnemonicParsing="false" text="Delete Booking" />
    </children>
 </AnchorPane>
