@@ -1,7 +1,11 @@
 package ui;
 
 import domain.Appointment;
+import domain.Customer;
+import domain.Employee;
 import domain.Treatment;
+import exceptions.BookingConflictException;
+import exceptions.ValidationException;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -9,9 +13,12 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
+import javafx.util.StringConverter;
 import service.AppointmentService;
+import service.CustomerService;
 import service.TreatmentService;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -21,18 +28,24 @@ public class BookingController {
 
     private final AppointmentService appointmentService;
     private final TreatmentService treatmentService;
+    private final CustomerService customerService;
+    private final Employee loggedInEmployee;
     private Appointment selectedForEdit = null;
 
-    public BookingController(AppointmentService appointmentService, TreatmentService treatmentService) {
+    public BookingController(AppointmentService appointmentService,
+                             TreatmentService treatmentService,
+                             CustomerService customerService,
+                             Employee loggedInEmployee) {
         this.appointmentService = appointmentService;
         this.treatmentService = treatmentService;
+        this.customerService = customerService;
+        this.loggedInEmployee = loggedInEmployee;
     }
 
     @FXML private DatePicker timeDate;
     @FXML private Label labelException;
     @FXML private TextField emailTxt;
     @FXML private TextField nameTxt;
-    @FXML private TextField durationTxt;
     @FXML private ComboBox<String> timeCombo;
     @FXML private ComboBox<Treatment> treatmentCombo;
 
@@ -61,6 +74,26 @@ public class BookingController {
         }
         timeCombo.setItems(tider);
 
+        // Forhindrer crash hvis bruger skriver ugyldig tekst i DatePicker
+        timeDate.setConverter(new StringConverter<>() {
+            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+            @Override
+            public String toString(LocalDate date) {
+                return date != null ? date.format(formatter) : "";
+            }
+
+            @Override
+            public LocalDate fromString(String text) {
+                if (text == null || text.isBlank()) return null;
+                try {
+                    return LocalDate.parse(text, formatter);
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        });
+
         colId.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
         colName.setCellValueFactory(new PropertyValueFactory<>("name"));
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
@@ -82,14 +115,12 @@ public class BookingController {
                         .or(timeDate.valueProperty().isNull())
                         .or(treatmentCombo.valueProperty().isNull())
         );
-
         changeButton.disableProperty().bind(
                 appointmentTable.getSelectionModel().selectedItemProperty().isNull()
         );
         deleteButton.disableProperty().bind(
                 appointmentTable.getSelectionModel().selectedItemProperty().isNull()
         );
-
         searchField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) handleSearch();
         });
@@ -105,22 +136,15 @@ public class BookingController {
 
     @FXML
     private void onCreateBooking() {
-        if (!emailTxt.getText().contains("@") || !emailTxt.getText().contains(".")) {
-            labelException.setText("Email skal indeholde @ og . fx test@test.dk");
-            return;
-        }
-
-        if (selectedForEdit == null) {
-            boolean emailExists = appointmentService.findAll().stream()
-                    .filter(a -> !a.isCancelled())
-                    .anyMatch(a -> a.getEmail().equalsIgnoreCase(emailTxt.getText()));
-            if (emailExists) {
-                labelException.setText("En aktiv booking med denne email findes allerede");
+        try {
+            if (timeDate.getValue() == null) {
+                labelException.setText("Fejl: Vælg en gyldig dato");
                 return;
             }
-        }
 
-        try {
+            Customer customer = customerService.findOrCreate(
+                    emailTxt.getText(), nameTxt.getText());
+
             int duration = treatmentCombo.getValue().getDurationMinutes();
             LocalTime time = LocalTime.parse(timeCombo.getValue(), DateTimeFormatter.ofPattern("HH:mm"));
             LocalDateTime startTime = LocalDateTime.of(timeDate.getValue(), time);
@@ -128,32 +152,31 @@ public class BookingController {
 
             if (selectedForEdit != null) {
                 Appointment updated = new Appointment(
-                        selectedForEdit.getAppointmentId(), 1, 1,
-                        emailTxt.getText(),
-                        nameTxt.getText(),
-                        startTime,
-                        duration,
-                        List.of(selectedTreatment)
+                        selectedForEdit.getAppointmentId(),
+                        customer.getId(), loggedInEmployee.getId(),
+                        emailTxt.getText(), nameTxt.getText(),
+                        startTime, duration, List.of(selectedTreatment)
                 );
-                appointmentService.update(updated);
+                Appointment saved = appointmentService.update(updated);
                 selectedForEdit = null;
                 createButton.setText("Opret booking");
             } else {
                 Appointment a = new Appointment(
-                        0, 1, 1,
-                        emailTxt.getText(),
-                        nameTxt.getText(),
-                        startTime,
-                        duration,
-                        List.of(selectedTreatment)
+                        0, customer.getId(), loggedInEmployee.getId(),
+                        emailTxt.getText(), nameTxt.getText(),
+                        startTime, duration, List.of(selectedTreatment)
                 );
                 appointmentService.create(a);
             }
             loadAppointments();
             clearFields();
             labelException.setText("");
-        } catch (Exception e) {
+
+        } catch (BookingConflictException | ValidationException e) {
             labelException.setText("Fejl: " + e.getMessage());
+        } catch (Exception e) {
+            labelException.setText("Der opstod en uventet fejl – prøv igen");
+            System.err.println("Uventet fejl i onCreateBooking: " + e.getMessage());
         }
     }
 
@@ -168,8 +191,11 @@ public class BookingController {
             appointmentService.cancel(selected.getAppointmentId());
             loadAppointments();
             labelException.setText("");
+        } catch (ValidationException e) {
+            labelException.setText("⚠ " + e.getMessage());
         } catch (Exception e) {
-            labelException.setText("Fejl: " + e.getMessage());
+            labelException.setText("Der opstod en uventet fejl – prøv igen");
+            System.err.println("Uventet fejl i onDeleteBooking: " + e.getMessage());
         }
     }
 

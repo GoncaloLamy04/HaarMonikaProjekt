@@ -1,14 +1,14 @@
 package service;
 
 import domain.Appointment;
+import exceptions.BookingConflictException;
+import exceptions.ValidationException;
 import repo.AppointmentRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
-// Service-lag: håndterer forretningsregler for bookinger.
-// Validerer input, tjekker overlap og delegerer til AppointmentRepository.
 public class AppointmentService {
 
     private final AppointmentRepository repo;
@@ -29,16 +29,16 @@ public class AppointmentService {
                 null
         );
 
-        if (overlap) throw new IllegalStateException("Overlap detected");
+        if (overlap) throw new BookingConflictException(
+                "Medarbejderen er optaget på det valgte tidspunkt");
         return repo.save(appointment);
     }
 
     // UC4 – Ret booking
     public Appointment update(Appointment appointment) {
         Objects.requireNonNull(appointment, "appointment");
-        if (appointment.getAppointmentId() <= 0) {
-            throw new IllegalArgumentException("appointmentId must be > 0");
-        }
+        if (appointment.getAppointmentId() <= 0)
+            throw new ValidationException("Booking-id er ugyldigt");
 
         validateForCreateOrUpdate(appointment);
 
@@ -49,29 +49,24 @@ public class AppointmentService {
                 appointment.getAppointmentId()
         );
 
-        if (overlap) throw new IllegalStateException("Overlap detected");
+        if (overlap) throw new BookingConflictException(
+                "Medarbejderen er optaget på det valgte tidspunkt");
         return repo.save(appointment);
     }
 
     // UC5 – Aflys booking
     public void cancel(int appointmentId) {
-        if (appointmentId <= 0) {
-            throw new IllegalArgumentException("appointmentId must be > 0");
-        }
+        if (appointmentId <= 0)
+            throw new ValidationException("Booking-id er ugyldigt");
 
         Appointment a = repo.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+                .orElseThrow(() -> new ValidationException("Booking blev ikke fundet"));
 
         a.cancel();
         repo.save(a);
     }
-    public List<Appointment> searchByCustomerName(String name) {
-        return repo.findAll().stream()
-                .filter(a -> a.getName().toLowerCase()
-                        .contains(name.toLowerCase()))
-                .toList();
-    }
-    // UC3 – Find/vis bookinger (filter/søg)
+
+    // UC3 – Find/vis bookinger (forberedt til fremtidig brug)
     public List<Appointment> findByCriteria(
             LocalDateTime fromInclusive,
             LocalDateTime toExclusive,
@@ -79,25 +74,36 @@ public class AppointmentService {
             Integer employeeId,
             boolean includeCancelled
     ) {
-        if (fromInclusive == null) throw new IllegalArgumentException("fromInclusive must not be null");
-        if (toExclusive == null) throw new IllegalArgumentException("toExclusive must not be null");
-        if (!toExclusive.isAfter(fromInclusive)) throw new IllegalArgumentException("toExclusive must be after fromInclusive");
+        if (fromInclusive == null) throw new ValidationException("Fra-dato må ikke være tom");
+        if (toExclusive == null) throw new ValidationException("Til-dato må ikke være tom");
+        if (!toExclusive.isAfter(fromInclusive))
+            throw new ValidationException("Til-dato skal være efter fra-dato");
 
         return repo.findByCriteria(fromInclusive, toExclusive, customerId, employeeId, includeCancelled);
+    }
+
+    public List<Appointment> searchByCustomerName(String name) {
+        return repo.findAll().stream()
+                .filter(a -> a.getName().toLowerCase().contains(name.toLowerCase()))
+                .toList();
     }
 
     public List<Appointment> findAll() {
         return repo.findAll();
     }
 
-    // Samlet input-validering for create/update
     private void validateForCreateOrUpdate(Appointment a) {
-        if (a.getCustomerId() <= 0) throw new IllegalArgumentException("customerId must be > 0");
-        if (a.getEmployeeId() <= 0) throw new IllegalArgumentException("employeeId must be > 0");
-        if (a.getStartTime() == null) throw new IllegalArgumentException("startTime must not be null");
-        if (a.getDurationMinutes() <= 0) throw new IllegalArgumentException("durationMinutes must be > 0");
-        if (a.getEmail() == null || a.getEmail().isBlank()) throw new IllegalArgumentException("email must not be blank");
-        if (a.getName() == null || a.getName().isBlank()) throw new IllegalArgumentException("name must not be blank");
-        // treatments valideres i domain ctor (Objects.requireNonNull)
+        if (a.getCustomerId() <= 0) throw new ValidationException("Kunde-id er ugyldigt");
+        if (a.getEmployeeId() <= 0) throw new ValidationException("Medarbejder-id er ugyldigt");
+        if (a.getStartTime() == null) throw new ValidationException("Tidspunkt skal vælges");
+        if (a.getDurationMinutes() <= 0) throw new ValidationException("Varighed skal være større end 0");
+        if (a.getEmail() == null || a.getEmail().isBlank())
+            throw new ValidationException("Email må ikke være tom");
+
+        String[] parts = a.getEmail().split("@");
+        if (parts.length != 2 || parts[0].isBlank() || !parts[1].contains(".") || parts[1].endsWith("."))
+            throw new ValidationException("Email er ikke gyldig – fx test@mail.com eller navn@firma.dk");
+        if (a.getName() == null || a.getName().isBlank())
+            throw new ValidationException("Navn må ikke være tomt");
     }
 }

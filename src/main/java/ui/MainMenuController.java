@@ -1,5 +1,6 @@
 package ui;
 
+import domain.Employee;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -9,6 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import service.AppointmentService;
+import service.CustomerService;
 import service.EmployeeService;
 import service.TreatmentService;
 
@@ -21,13 +23,19 @@ public class MainMenuController {
     private final EmployeeService employeeService;
     private final AppointmentService appointmentService;
     private final TreatmentService treatmentService;
+    private final CustomerService customerService;
+    private final Employee loggedInEmployee;
 
     public MainMenuController(EmployeeService employeeService,
                               AppointmentService appointmentService,
-                              TreatmentService treatmentService) {
+                              TreatmentService treatmentService,
+                              CustomerService customerService,
+                              Employee loggedInEmployee) { // RETTET: var EmployeeService
         this.employeeService = employeeService;
         this.appointmentService = appointmentService;
         this.treatmentService = treatmentService;
+        this.customerService = customerService;
+        this.loggedInEmployee = loggedInEmployee;
     }
 
     @FXML private StackPane contentArea;
@@ -48,7 +56,7 @@ public class MainMenuController {
     }
 
     @FXML
-    private void onCreate() { loadView("create-booking-view.fxml"); }
+    private void onCreate() { loadView("booking-view.fxml"); }
 
     @FXML
     private void onEmployee() { loadView("employee-view.fxml"); }
@@ -59,7 +67,9 @@ public class MainMenuController {
             FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(
                     getClass().getResource("/com/example/haarmonikaprojekt/login-view.fxml")));
             loader.setControllerFactory(type -> {
-                if (type == LoginController.class) return new LoginController(employeeService, appointmentService, treatmentService);
+                if (type == LoginController.class)
+                    return new LoginController(employeeService,
+                            appointmentService, treatmentService, customerService); // RETTET: customerService tilføjet
                 try { return type.getDeclaredConstructor().newInstance(); }
                 catch (Exception e) { throw new RuntimeException(e); }
             });
@@ -81,15 +91,17 @@ public class MainMenuController {
         try {
             FXMLLoader loader = new FXMLLoader(resource);
             loader.setControllerFactory(type -> {
-                if (type == BookingController.class) return new BookingController(appointmentService, treatmentService);
-                if (type == EmployeeController.class) return new EmployeeController(employeeService);
+                if (type == BookingController.class)
+                    return new BookingController(appointmentService,
+                            treatmentService, customerService, loggedInEmployee);
+                if (type == EmployeeController.class)
+                    return new EmployeeController(employeeService);
                 try { return type.getDeclaredConstructor().newInstance(); }
                 catch (Exception e) { throw new RuntimeException(e); }
             });
             contentArea.getChildren().setAll((Node) loader.load());
         } catch (IOException e) {
-            System.err.println("[FXML] Could not load: " + path);
-            e.printStackTrace();
+            System.err.println("[FXML] Could not load: " + path + " – " + e.getMessage());
         }
     }
 }

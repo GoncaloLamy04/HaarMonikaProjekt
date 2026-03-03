@@ -7,6 +7,10 @@ module com.example.haarmonikaprojekt {
     opens com.example.haarmonikaprojekt to javafx.fxml;
     exports com.example.haarmonikaprojekt;
     exports ui;
+    exports service;
+    exports domain;
+    exports infrastructure;
+    exports repo;
     opens ui to javafx.fxml;
     opens domain to javafx.base, javafx.controls;
 }
