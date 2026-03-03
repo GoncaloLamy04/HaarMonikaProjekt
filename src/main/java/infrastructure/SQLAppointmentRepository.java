@@ -1,6 +1,7 @@
 package infrastructure;
 
 import domain.Appointment;
+import domain.Treatment;
 import repo.AppointmentRepository;
 
 import java.sql.*;
@@ -9,8 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-// Infrastructure-lag: SQL-implementering af AppointmentRepository.
-// Håndterer al databasekommunikation for bookinger.
 public class SQLAppointmentRepository implements AppointmentRepository {
 
     private final SQLConnector connector;
@@ -22,7 +21,6 @@ public class SQLAppointmentRepository implements AppointmentRepository {
     @Override
     public Appointment save(Appointment appointment) {
         if (appointment.getAppointmentId() == 0) {
-            // INSERT
             String sql = "INSERT INTO appointments (customer_id, employee_id, name, email, start_time, duration_minutes, cancelled) VALUES (?, ?, ?, ?, ?, ?, ?)";
             try (Connection con = connector.getConnection();
                  PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -37,6 +35,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
                     if (keys.next()) {
                         int id = keys.getInt(1);
+                        saveTreatments(con, id, appointment.getTreatments());
                         return new Appointment(id, appointment.getCustomerId(),
                                 appointment.getEmployeeId(), appointment.getEmail(),
                                 appointment.getName(), appointment.getStartTime(),
@@ -47,7 +46,6 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 throw new RuntimeException("Fejl ved save() INSERT", e);
             }
         } else {
-            // UPDATE
             String sql = "UPDATE appointments SET customer_id=?, employee_id=?, name=?, email=?, start_time=?, duration_minutes=?, cancelled=? WHERE id=?";
             try (Connection con = connector.getConnection();
                  PreparedStatement ps = con.prepareStatement(sql)) {
@@ -60,6 +58,8 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 ps.setBoolean(7, appointment.isCancelled());
                 ps.setInt(8, appointment.getAppointmentId());
                 ps.executeUpdate();
+                deleteTreatments(con, appointment.getAppointmentId());
+                saveTreatments(con, appointment.getAppointmentId(), appointment.getTreatments());
             } catch (SQLException e) {
                 throw new RuntimeException("Fejl ved save() UPDATE", e);
             }
@@ -112,7 +112,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 "SELECT id, customer_id, employee_id, name, email, start_time, duration_minutes, cancelled FROM appointments WHERE start_time >= ? AND start_time < ?");
         if (customerId != null) sql.append(" AND customer_id = ?");
         if (employeeId != null) sql.append(" AND employee_id = ?");
-        if (!includeCancelled)  sql.append(" AND cancelled = false");
+        if (!includeCancelled) sql.append(" AND cancelled = false");
 
         List<Appointment> result = new ArrayList<>();
         try (Connection con = connector.getConnection();
@@ -165,16 +165,61 @@ public class SQLAppointmentRepository implements AppointmentRepository {
     }
 
     private Appointment mapRow(ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
         Appointment a = new Appointment(
-                rs.getInt("id"),
+                id,
                 rs.getInt("customer_id"),
                 rs.getInt("employee_id"),
                 rs.getString("email"),
                 rs.getString("name"),
                 rs.getTimestamp("start_time").toLocalDateTime(),
-                rs.getInt("duration_minutes")
+                rs.getInt("duration_minutes"),
+                findTreatmentsForAppointment(id)
         );
         if (rs.getBoolean("cancelled")) a.setCancelled(true);
         return a;
+    }
+
+    private List<Treatment> findTreatmentsForAppointment(int appointmentId) {
+        String sql = "SELECT t.id, t.treatment_type, t.duration_minutes " +
+                "FROM treatments t " +
+                "JOIN appointment_treatments at ON t.id = at.treatment_id " +
+                "WHERE at.appointment_id = ?";
+        List<Treatment> treatments = new ArrayList<>();
+        try (Connection con = connector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, appointmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    treatments.add(new Treatment(
+                            rs.getInt("id"),
+                            rs.getString("treatment_type"),
+                            rs.getInt("duration_minutes")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Fejl ved findTreatmentsForAppointment()", e);
+        }
+        return treatments;
+    }
+
+    private void saveTreatments(Connection con, int appointmentId, List<Treatment> treatments) throws SQLException {
+        String sql = "INSERT INTO appointment_treatments (appointment_id, treatment_id) VALUES (?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (Treatment t : treatments) {
+                ps.setInt(1, appointmentId);
+                ps.setInt(2, t.getId());
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    private void deleteTreatments(Connection con, int appointmentId) throws SQLException {
+        String sql = "DELETE FROM appointment_treatments WHERE appointment_id = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, appointmentId);
+            ps.executeUpdate();
+        }
     }
 }

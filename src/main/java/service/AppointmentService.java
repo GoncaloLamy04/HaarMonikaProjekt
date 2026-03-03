@@ -65,12 +65,11 @@ public class AppointmentService {
         a.cancel();
         repo.save(a);
     }
-    public static List<Appointment> searchByCustomerName(String name){
-        return findAll().stream()
+    public List<Appointment> searchByCustomerName(String name) {
+        return repo.findAll().stream()
                 .filter(a -> a.getName().toLowerCase()
-                .contains(name.toLowerCase()))
+                        .contains(name.toLowerCase()))
                 .toList();
-
     }
     // UC3 – Find/vis bookinger (filter/søg)
     public List<Appointment> findByCriteria(

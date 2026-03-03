@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
@@ -10,46 +11,62 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="450.0" prefWidth="620.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.CreateBookingController">
+<AnchorPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.CreateBookingController">
    <children>
       <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
          <children>
 
-            <!-- Inputfelter i en række -->
             <HBox spacing="10.0">
                <children>
-                  <TextField fx:id="nameTxt" prefWidth="110.0" promptText="Navn" />
-                  <TextField fx:id="emailTxt" prefWidth="120.0" promptText="Email" />
-                  <TextField fx:id="durationTxt" prefWidth="110.0" promptText="Varighed (min)" />
-                  <TextField fx:id="treatmentTxt" prefWidth="100.0" promptText="Behandling" />
-                  <DatePicker fx:id="timeDate" prefWidth="140.0" promptText="Dato" />
+                  <VBox spacing="3.0">
+                     <Label text="Navn"/>
+                     <TextField fx:id="nameTxt" prefWidth="110.0"/>
+                  </VBox>
+                  <VBox spacing="3.0">
+                     <Label text="Email"/>
+                     <TextField fx:id="emailTxt" prefWidth="150.0"/>
+                  </VBox>
+                  <VBox spacing="3.0">
+                     <Label text="Behandling"/>
+                     <ComboBox fx:id="treatmentCombo" prefWidth="160.0"/>
+                  </VBox>
+                  <VBox spacing="3.0">
+                     <Label text="Tid"/>
+                     <ComboBox fx:id="timeCombo" prefWidth="100.0"/>
+                  </VBox>
+                  <VBox spacing="3.0">
+                     <Label text="Dato"/>
+                     <DatePicker fx:id="timeDate" prefWidth="140.0"/>
+                  </VBox>
                </children>
             </HBox>
 
-            <!-- Knapper i en række -->
+            <TextField fx:id="durationTxt" visible="false" managed="false"/>
+
             <HBox spacing="10.0">
                <children>
-                  <Button fx:id="createButton" mnemonicParsing="false" prefWidth="130.0" text="Opret booking" />
-                  <Button fx:id="changeButton" mnemonicParsing="false" prefWidth="130.0" text="Ret booking" />
-                  <Button fx:id="deleteButton" mnemonicParsing="false" prefWidth="130.0" text="Aflys booking" />
-                  <TextField fx:id="searchField" prefHeight="26.0" prefWidth="92.0" />
-                  <Button mnemonicParsing="false" onAction="#handleSearch" prefHeight="26.0" prefWidth="79.0" text="Button" />
+                  <Button fx:id="createButton" mnemonicParsing="false" prefWidth="130.0" text="Opret booking" onAction="#onCreateBooking"/>
+                  <Button fx:id="changeButton" mnemonicParsing="false" prefWidth="130.0" text="Ret booking" onAction="#onChangeBooking"/>
+                  <Button fx:id="deleteButton" mnemonicParsing="false" prefWidth="130.0" text="Aflys booking" onAction="#onDeleteBooking"/>
+                  <TextField fx:id="searchField" prefHeight="26.0" prefWidth="100.0" promptText="Søg navn..."/>
+                  <Button mnemonicParsing="false" onAction="#handleSearch" prefHeight="26.0" prefWidth="60.0" text="Søg"/>
+                  <Button mnemonicParsing="false" onAction="#clearSearch" prefHeight="26.0" prefWidth="60.0" text="Ryd"/>
                </children>
             </HBox>
 
-            <!-- Fejlbesked -->
-            <Label fx:id="labelException" textFill="red" />
+            <Label fx:id="labelException" textFill="red"/>
 
-            <!-- Tabel fylder resten -->
             <TableView fx:id="appointmentTable" VBox.vgrow="ALWAYS">
                <columns>
-                  <TableColumn fx:id="colId" text="Id" />
-                  <TableColumn fx:id="colName" text="Navn" />
-                  <TableColumn fx:id="colEmail" text="Email" />
-                  <TableColumn fx:id="colTreatment" text="Behandling" />
-                  <TableColumn fx:id="colTime" text="Tid" />
-                  <TableColumn fx:id="colDuration" text="Varighed" />
+                  <TableColumn fx:id="colId" text="Id" prefWidth="40"/>
+                  <TableColumn fx:id="colName" text="Navn" prefWidth="100"/>
+                  <TableColumn fx:id="colEmail" text="Email" prefWidth="130"/>
+                  <TableColumn fx:id="colTreatment" text="Behandling" prefWidth="150"/>
+                  <TableColumn fx:id="colTime" text="Tid" prefWidth="130"/>
                </columns>
+               <columnResizePolicy>
+                  <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+               </columnResizePolicy>
             </TableView>
 
          </children>

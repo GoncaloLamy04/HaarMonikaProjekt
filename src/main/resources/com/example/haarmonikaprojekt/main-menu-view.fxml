@@ -3,23 +3,22 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.MainMenuController">
-   <children>
-      <HBox layoutY="-1.0" prefHeight="30.0" prefWidth="600.0">
-         <children>
-            <ToolBar prefHeight="35.0" prefWidth="601.0">
-              <items>
-                  <Button fx:id="mainButton" mnemonicParsing="false" onAction="#onMenu" text="Hjem" />
-                  <Button fx:id="createButton" mnemonicParsing="false" onAction="#onCreate" text="Bookinger" />
-                  <Button fx:id="employeeButton" mnemonicParsing="false" onAction="#onEmployee" text="Employee" />
-                  <Button fx:id="logoutButton" mnemonicParsing="false" onAction="#onLogout" text="Log ud" />
-              </items>
-            </ToolBar>
-         </children>
-      </HBox>
-      <StackPane fx:id="contentArea" layoutY="34.0" prefHeight="367.0" prefWidth="600.0" />
-   </children>
+<AnchorPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.MainMenuController">
+    <children>
+        <ToolBar AnchorPane.topAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+            <items>
+                <Button fx:id="mainButton" mnemonicParsing="false" onAction="#onMenu" text="Hjem"/>
+                <Button fx:id="createButton" mnemonicParsing="false" onAction="#onCreate" text="Bookinger"/>
+                <Button fx:id="employeeButton" mnemonicParsing="false" onAction="#onEmployee" text="Medarbejdere"/>
+                <Button fx:id="logoutButton" mnemonicParsing="false" onAction="#onLogout" text="Log ud"/>
+            </items>
+        </ToolBar>
+        <StackPane fx:id="contentArea"
+                   AnchorPane.topAnchor="35.0"
+                   AnchorPane.bottomAnchor="0.0"
+                   AnchorPane.leftAnchor="0.0"
+                   AnchorPane.rightAnchor="0.0"/>
+    </children>
 </AnchorPane>

@@ -1,9 +1,6 @@
 package infrastructure;
 
-import repo.EmployeeRepository;
-import repo.AppointmentRepository;
-import repo.CustomerRepository;
-import repo.CleanupLogRepository;
+import repo.*;
 
 public class RepositoryFactory {
 
@@ -27,5 +24,8 @@ public class RepositoryFactory {
 
     public CleanupLogRepository createCleanupLogRepository() {
         return new SQLCleanupLogRepository(connector);
+    }
+    public TreatmentRepository createTreatmentRepository() {
+        return new SQLTreatmentRepository(SQLConnector.getInstance());
     }
 }
