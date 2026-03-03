@@ -65,5 +65,10 @@ class EmployeeServiceTest {
             calls++;
             return Optional.ofNullable(resultEmployee);
         }
+
+        @Override
+        public void create(Employee employee) {
+            // Ikke brugt i disse tests
+        }
     }
 }

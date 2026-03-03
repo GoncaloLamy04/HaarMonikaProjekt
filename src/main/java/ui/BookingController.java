@@ -17,13 +17,13 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class CreateBookingController {
+public class BookingController {
 
     private final AppointmentService appointmentService;
     private final TreatmentService treatmentService;
     private Appointment selectedForEdit = null;
 
-    public CreateBookingController(AppointmentService appointmentService, TreatmentService treatmentService) {
+    public BookingController(AppointmentService appointmentService, TreatmentService treatmentService) {
         this.appointmentService = appointmentService;
         this.treatmentService = treatmentService;
     }
