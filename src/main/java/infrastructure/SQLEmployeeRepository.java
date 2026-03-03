@@ -1,11 +1,14 @@
 package infrastructure;
 
 import domain.Employee;
+import exceptions.DataAccessException;
 import repo.EmployeeRepository;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class SQLEmployeeRepository implements EmployeeRepository {
@@ -14,6 +17,27 @@ public class SQLEmployeeRepository implements EmployeeRepository {
 
     public SQLEmployeeRepository(SQLConnector connector) {
         this.connector = connector;
+    }
+
+    @Override
+    public List<Employee> findAll() {
+        String sql = "SELECT id, name, email, role FROM employees";
+        List<Employee> employees = new ArrayList<>();
+        try (Connection con = connector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                employees.add(new Employee(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("email"),
+                        rs.getString("role")
+                ));
+            }
+            return employees;
+        } catch (SQLException e) {
+            throw new DataAccessException("Fejl ved findAll() employees", e);
+        }
     }
 
     @Override
@@ -41,7 +65,7 @@ public class SQLEmployeeRepository implements EmployeeRepository {
             return Optional.empty();
 
         } catch (SQLException e) {
-            throw new RuntimeException("DB fejl ved login", e);
+            throw new DataAccessException("DB fejl ved login", e);
         }
     }
 
@@ -60,7 +84,7 @@ public class SQLEmployeeRepository implements EmployeeRepository {
             ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException("DB fejl ved oprettelse af medarbejder", e);
+            throw new DataAccessException("DB fejl ved oprettelse af medarbejder", e);
         }
     }
 }

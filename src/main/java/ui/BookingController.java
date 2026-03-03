@@ -5,6 +5,7 @@ import domain.Customer;
 import domain.Employee;
 import domain.Treatment;
 import exceptions.BookingConflictException;
+import exceptions.DataAccessException;
 import exceptions.ValidationException;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -12,10 +13,12 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.ListCell;
 import javafx.scene.input.KeyCode;
 import javafx.util.StringConverter;
 import service.AppointmentService;
 import service.CustomerService;
+import service.EmployeeService;
 import service.TreatmentService;
 
 import java.time.LocalDate;
@@ -29,16 +32,19 @@ public class BookingController {
     private final AppointmentService appointmentService;
     private final TreatmentService treatmentService;
     private final CustomerService customerService;
+    private final EmployeeService employeeService;
     private final Employee loggedInEmployee;
     private Appointment selectedForEdit = null;
 
     public BookingController(AppointmentService appointmentService,
                              TreatmentService treatmentService,
                              CustomerService customerService,
+                             EmployeeService employeeService,
                              Employee loggedInEmployee) {
         this.appointmentService = appointmentService;
         this.treatmentService = treatmentService;
         this.customerService = customerService;
+        this.employeeService = employeeService;
         this.loggedInEmployee = loggedInEmployee;
     }
 
@@ -49,12 +55,20 @@ public class BookingController {
     @FXML private ComboBox<String> timeCombo;
     @FXML private ComboBox<Treatment> treatmentCombo;
 
+    // Filter felter
+    @FXML private DatePicker filterFrom;
+    @FXML private DatePicker filterTo;
+    @FXML private ComboBox<Employee> filterEmployee;
+    @FXML private CheckBox filterCancelled;
+
     @FXML private TableView<Appointment> appointmentTable;
     @FXML private TableColumn<Appointment, Integer> colId;
     @FXML private TableColumn<Appointment, String> colName;
     @FXML private TableColumn<Appointment, String> colEmail;
     @FXML private TableColumn<Appointment, String> colTreatment;
     @FXML private TableColumn<Appointment, String> colTime;
+    @FXML private TableColumn<Appointment, String> colStatus;
+    @FXML private TableColumn<Appointment, String> colEmployee;
 
     @FXML private Button createButton;
     @FXML private Button deleteButton;
@@ -66,6 +80,7 @@ public class BookingController {
     @FXML
     public void initialize() {
         treatmentCombo.setItems(FXCollections.observableArrayList(treatmentService.findAll()));
+        filterEmployee.setItems(FXCollections.observableArrayList(employeeService.findAll()));
 
         ObservableList<String> tider = FXCollections.observableArrayList();
         for (int t = 8; t <= 17; t++) {
@@ -74,8 +89,29 @@ public class BookingController {
         }
         timeCombo.setItems(tider);
 
+        timeCombo.setItems(tider);
+
+        // Grayer optagne tider ud når dato vælges
+        timeDate.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) return;
+            List<String> booked = appointmentService.findBookedTimesForEmployee(
+                    loggedInEmployee.getId(), newVal);
+            timeCombo.setCellFactory(lv -> new ListCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) { setText(null); setDisable(false); }
+                    else {
+                        setText(item);
+                        setDisable(booked.contains(item));
+                        setStyle(booked.contains(item) ? "-fx-opacity: 0.4;" : "");
+                    }
+                }
+            });
+        });
+
         // Forhindrer crash hvis bruger skriver ugyldig tekst i DatePicker
-        timeDate.setConverter(new StringConverter<>() {
+        StringConverter<LocalDate> dateConverter = new StringConverter<>() {
             private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
             @Override
@@ -92,7 +128,10 @@ public class BookingController {
                     return null;
                 }
             }
-        });
+        };
+        timeDate.setConverter(dateConverter);
+        filterFrom.setConverter(dateConverter);
+        filterTo.setConverter(dateConverter);
 
         colId.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
         colName.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -104,6 +143,10 @@ public class BookingController {
         colTime.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getStartTime().format(
                         DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))));
+        colStatus.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().isCancelled() ? "Aflyst" : "Aktiv"));
+        colEmployee.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().getEmployeeName()));
 
         appointmentTable.setItems(appointments);
         loadAppointments();
@@ -127,11 +170,62 @@ public class BookingController {
     }
 
     private void loadAppointments() {
-        List<Appointment> all = appointmentService.findAll()
-                .stream()
-                .filter(a -> !a.isCancelled())
-                .toList();
-        appointments.setAll(all);
+        appointments.setAll(appointmentService.findActive());
+    }
+
+    @FXML
+    private void onFilter() {
+        LocalDate from = filterFrom.getValue();
+        LocalDate to = filterTo.getValue();
+        Employee selectedEmployee = filterEmployee.getValue();
+        boolean includeCancelled = filterCancelled.isSelected();
+
+        // Hvis ingen datoer er valgt bruges hele perioden
+        LocalDateTime fromDt = from != null
+                ? from.atStartOfDay()
+                : LocalDate.of(2000, 1, 1).atStartOfDay();
+        LocalDateTime toDt = to != null
+                ? to.plusDays(1).atStartOfDay()
+                : LocalDate.of(2100, 1, 1).atStartOfDay();
+
+        if (fromDt.isAfter(toDt) || fromDt.isEqual(toDt)) {
+            labelException.setText("Fejl: Fra-dato skal være før til-dato");
+            return;
+        }
+
+        Integer employeeId = selectedEmployee != null ? selectedEmployee.getId() : null;
+
+        try {
+            List<Appointment> results = appointmentService.findByCriteria(
+                    fromDt, toDt, null, employeeId, includeCancelled);
+
+            // Hvis "Vis aflyste" er valgt, filtrer så KUN aflyste vises
+            if (includeCancelled) {
+                results = results.stream()
+                        .filter(Appointment::isCancelled)
+                        .toList();
+            }
+            appointments.setAll(results);
+            labelException.setText("");
+        } catch (ValidationException e) {
+            labelException.setText("Fejl: " + e.getMessage());
+        } catch (DataAccessException e) {
+            labelException.setText("Der opstod en databasefejl – prøv igen");
+            System.err.println("DB fejl i onFilter: " + e.getMessage());
+        } catch (Exception e) {
+            labelException.setText("Der opstod en uventet fejl – prøv igen");
+            System.err.println("Uventet fejl i onFilter: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void clearFilter() {
+        filterFrom.setValue(null);
+        filterTo.setValue(null);
+        filterEmployee.setValue(null);
+        filterCancelled.setSelected(false);
+        loadAppointments();
+        labelException.setText("");
     }
 
     @FXML
@@ -174,6 +268,9 @@ public class BookingController {
 
         } catch (BookingConflictException | ValidationException e) {
             labelException.setText("Fejl: " + e.getMessage());
+        } catch (DataAccessException e) {
+            labelException.setText("Der opstod en databasefejl – prøv igen");
+            System.err.println("DB fejl i onCreateBooking: " + e.getMessage());
         } catch (Exception e) {
             labelException.setText("Der opstod en uventet fejl – prøv igen");
             System.err.println("Uventet fejl i onCreateBooking: " + e.getMessage());
@@ -192,7 +289,10 @@ public class BookingController {
             loadAppointments();
             labelException.setText("");
         } catch (ValidationException e) {
-            labelException.setText("⚠ " + e.getMessage());
+            labelException.setText("Fejl: " + e.getMessage());
+        } catch (DataAccessException e) {
+            labelException.setText("Der opstod en databasefejl – prøv igen");
+            System.err.println("DB fejl i onDeleteBooking: " + e.getMessage());
         } catch (Exception e) {
             labelException.setText("Der opstod en uventet fejl – prøv igen");
             System.err.println("Uventet fejl i onDeleteBooking: " + e.getMessage());

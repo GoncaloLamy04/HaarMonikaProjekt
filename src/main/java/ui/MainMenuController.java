@@ -92,8 +92,8 @@ public class MainMenuController {
             FXMLLoader loader = new FXMLLoader(resource);
             loader.setControllerFactory(type -> {
                 if (type == BookingController.class)
-                    return new BookingController(appointmentService,
-                            treatmentService, customerService, loggedInEmployee);
+                    return new BookingController(appointmentService, treatmentService,
+                            customerService, employeeService, loggedInEmployee);
                 if (type == EmployeeController.class)
                     return new EmployeeController(employeeService);
                 try { return type.getDeclaredConstructor().newInstance(); }

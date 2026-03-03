@@ -1,6 +1,7 @@
 package infrastructure;
 
 import domain.Customer;
+import exceptions.DataAccessException;
 import repo.CustomerRepository;
 
 import java.sql.*;
@@ -33,7 +34,7 @@ public class SQLCustomerRepository implements CustomerRepository {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved findAll()", e);
+            throw new DataAccessException("Fejl ved findAll()", e);
         }
     }
 
@@ -54,7 +55,7 @@ public class SQLCustomerRepository implements CustomerRepository {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved findByEmail()", e);
+            throw new DataAccessException("Fejl ved findByEmail()", e);
         }
     }
 
@@ -75,7 +76,7 @@ public class SQLCustomerRepository implements CustomerRepository {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved findById()", e);
+            throw new DataAccessException("Fejl ved findById()", e);
         }
     }
 
@@ -102,7 +103,7 @@ public class SQLCustomerRepository implements CustomerRepository {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved save()", e);
+            throw new DataAccessException("Fejl ved save()", e);
         }
     }
 
@@ -117,7 +118,7 @@ public class SQLCustomerRepository implements CustomerRepository {
             ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved delete()", e);
+            throw new DataAccessException("Fejl ved delete()", e);
         }
     }
 

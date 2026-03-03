@@ -1,13 +1,11 @@
 package repo;
 
 import domain.Appointment;
-import domain.Employee;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-// Persistens port til Appointment (DB-implementering senere).
 public interface AppointmentRepository {
 
     Appointment save(Appointment appointment);
@@ -29,5 +27,12 @@ public interface AppointmentRepository {
                                      LocalDateTime end,
                                      Integer ignoreAppointmentId);
 
+    boolean existsOverlapForCustomer(int customerId,  // NY
+                                     LocalDateTime start,
+                                     LocalDateTime end,
+                                     Integer ignoreAppointmentId);
+
     int deleteOlderThan(LocalDateTime cutoffEndTime);
+
+    List<Appointment> searchByCustomerName(String name);
 }

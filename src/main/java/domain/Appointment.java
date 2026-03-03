@@ -14,6 +14,8 @@ public class Appointment {
     private final LocalDateTime startTime;
     private final int durationMinutes;
 
+    private String employeeName = "";
+
     private final List<Treatment> treatments;
 
     private boolean cancelled;
@@ -74,4 +76,7 @@ public class Appointment {
     public void setCancelled(boolean cancelled) {
         this.cancelled = cancelled;
     }
+
+    public String getEmployeeName() { return employeeName; }
+    public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
 }

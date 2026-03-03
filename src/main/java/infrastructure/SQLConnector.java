@@ -1,5 +1,7 @@
 package infrastructure;
 
+import exceptions.DataAccessException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -26,7 +28,7 @@ public class SQLConnector {
             this.password = props.getProperty("db.password");
 
         } catch (IOException e) {
-            throw new RuntimeException("Could not load db.properties", e);
+            throw new DataAccessException("Could not load db.properties", e);
         }
     }
 

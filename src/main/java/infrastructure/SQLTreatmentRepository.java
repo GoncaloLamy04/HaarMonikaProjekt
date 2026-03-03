@@ -1,6 +1,7 @@
 package infrastructure;
 
 import domain.Treatment;
+import exceptions.DataAccessException;
 import repo.TreatmentRepository;
 
 import java.sql.*;
@@ -31,7 +32,7 @@ public class SQLTreatmentRepository implements TreatmentRepository {
             }
             return treatments;
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved findAll() treatments", e);
+            throw new DataAccessException("Fejl ved findAll() treatments", e);
         }
     }
 }

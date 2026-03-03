@@ -23,7 +23,7 @@ class AppointmentServiceTest {
                 1, 10, 5, "a@a.dk", "Anna",
                 LocalDateTime.of(2026, 2, 26, 10, 0), 30);
 
-        assertThrows(BookingConflictException.class, () -> service.create(a)); // RETTET
+        assertThrows(BookingConflictException.class, () -> service.create(a));
         assertEquals(1, repo.overlapCalls);
         assertEquals(0, repo.saveCalls);
         assertNull(repo.lastIgnoreAppointmentId);
@@ -67,7 +67,7 @@ class AppointmentServiceTest {
         repo.toFind = null;
         AppointmentService service = new AppointmentService(repo);
 
-        assertThrows(ValidationException.class, () -> service.cancel(123)); // RETTET
+        assertThrows(ValidationException.class, () -> service.cancel(123));
         assertEquals(0, repo.saveCalls);
     }
 
@@ -76,7 +76,7 @@ class AppointmentServiceTest {
         FakeRepo repo = new FakeRepo();
         AppointmentService service = new AppointmentService(repo);
 
-        assertThrows(ValidationException.class, () -> service.cancel(0)); // RETTET
+        assertThrows(ValidationException.class, () -> service.cancel(0));
     }
 
     @Test
@@ -104,7 +104,7 @@ class AppointmentServiceTest {
                 7, 12, 9, "c@c.dk", "Cecilie",
                 LocalDateTime.of(2026, 2, 26, 12, 0), 45);
 
-        assertThrows(BookingConflictException.class, () -> service.update(a)); // RETTET
+        assertThrows(BookingConflictException.class, () -> service.update(a));
         assertEquals(1, repo.overlapCalls);
         assertEquals(0, repo.saveCalls);
         assertEquals(Integer.valueOf(7), repo.lastIgnoreAppointmentId);
@@ -118,7 +118,7 @@ class AppointmentServiceTest {
                 0, 12, 9, "c@c.dk", "Cecilie",
                 LocalDateTime.of(2026, 2, 26, 12, 0), 45);
 
-        assertThrows(ValidationException.class, () -> service.update(a)); // RETTET
+        assertThrows(ValidationException.class, () -> service.update(a));
     }
 
     @Test
@@ -142,13 +142,26 @@ class AppointmentServiceTest {
     }
 
     @Test
+    void create_throwsWhenCustomerOverlap() {
+        FakeRepo repo = new FakeRepo();
+        repo.customerOverlap = true;
+        AppointmentService service = new AppointmentService(repo);
+        Appointment a = new Appointment(
+                1, 10, 5, "a@a.dk", "Anna",
+                LocalDateTime.of(2026, 2, 26, 10, 0), 30);
+
+        assertThrows(BookingConflictException.class, () -> service.create(a));
+        assertEquals(0, repo.saveCalls);
+    }
+
+    @Test
     void findByCriteria_throwsWhenInvalidRange() {
         FakeRepo repo = new FakeRepo();
         AppointmentService service = new AppointmentService(repo);
         LocalDateTime from = LocalDateTime.of(2026, 2, 26, 10, 0);
         LocalDateTime to = LocalDateTime.of(2026, 2, 26, 10, 0);
 
-        assertThrows(ValidationException.class, // RETTET
+        assertThrows(ValidationException.class,
                 () -> service.findByCriteria(from, to, null, null, false));
     }
 
@@ -167,6 +180,7 @@ class AppointmentServiceTest {
     static class FakeRepo implements AppointmentRepository {
 
         boolean overlap = false;
+        boolean customerOverlap = false;
         int saveCalls = 0;
         int overlapCalls = 0;
         int findCalls = 0;
@@ -203,6 +217,17 @@ class AppointmentServiceTest {
         }
 
         @Override
+        public boolean existsOverlapForCustomer(int customerId, LocalDateTime start,
+                                                LocalDateTime end, Integer ignoreAppointmentId) {
+            return customerOverlap;
+        }
+
+        @Override
         public int deleteOlderThan(LocalDateTime cutoffEndTime) { return 0; }
+
+        @Override
+        public List<Appointment> searchByCustomerName(String name) {
+            return List.of();
+        }
     }
 }

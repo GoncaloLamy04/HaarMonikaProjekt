@@ -20,12 +20,11 @@ class CleanupServiceTest {
         repo.deletedCount = 3;
         CleanupService service = new CleanupService(repo, logRepo);
 
-        int result = service.deleteOlderThan(LocalDateTime.of(2021, 1,
-                1, 0, 0));
+        int result = service.deleteOlderThan(LocalDateTime.of(2021, 1, 1, 0, 0));
 
         assertEquals(3, result);
         assertEquals(1, repo.deleteCalls);
-        assertEquals(1, logRepo.logCalls); // logger også
+        assertEquals(1, logRepo.logCalls);
     }
 
     @Test
@@ -55,6 +54,12 @@ class CleanupServiceTest {
         @Override public boolean existsOverlapForEmployee(
                 int eId, LocalDateTime s, LocalDateTime e, Integer ignore) {
             throw new UnsupportedOperationException(); }
+        @Override public boolean existsOverlapForCustomer(
+                int customerId, LocalDateTime s, LocalDateTime e, Integer ignore) {
+            throw new UnsupportedOperationException(); }
+        @Override public List<Appointment> searchByCustomerName(String name) { // RETTET: flyttet hertil
+            return List.of();
+        }
     }
 
     static class FakeLogRepo implements CleanupLogRepository {

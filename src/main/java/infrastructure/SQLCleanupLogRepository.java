@@ -1,5 +1,6 @@
 package infrastructure;
 
+import exceptions.DataAccessException;
 import repo.CleanupLogRepository;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,7 +23,7 @@ public class SQLCleanupLogRepository implements CleanupLogRepository {
             ps.setString(2, errorMessage);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved logCleanup()", e);
+            throw new DataAccessException("Fejl ved logCleanup()", e);
         }
     }
 }

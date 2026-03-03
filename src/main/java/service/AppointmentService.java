@@ -5,7 +5,9 @@ import exceptions.BookingConflictException;
 import exceptions.ValidationException;
 import repo.AppointmentRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,15 +24,24 @@ public class AppointmentService {
         Objects.requireNonNull(appointment, "appointment");
         validateForCreateOrUpdate(appointment);
 
-        boolean overlap = repo.existsOverlapForEmployee(
+        boolean employeeOverlap = repo.existsOverlapForEmployee(
                 appointment.getEmployeeId(),
                 appointment.getStartTime(),
                 appointment.getEndTime(),
                 null
         );
-
-        if (overlap) throw new BookingConflictException(
+        if (employeeOverlap) throw new BookingConflictException(
                 "Medarbejderen er optaget på det valgte tidspunkt");
+
+        boolean customerOverlap = repo.existsOverlapForCustomer(
+                appointment.getCustomerId(),
+                appointment.getStartTime(),
+                appointment.getEndTime(),
+                null
+        );
+        if (customerOverlap) throw new BookingConflictException(
+                "Kunden har allerede en booking på det valgte tidspunkt");
+
         return repo.save(appointment);
     }
 
@@ -42,15 +53,24 @@ public class AppointmentService {
 
         validateForCreateOrUpdate(appointment);
 
-        boolean overlap = repo.existsOverlapForEmployee(
+        boolean employeeOverlap = repo.existsOverlapForEmployee(
                 appointment.getEmployeeId(),
                 appointment.getStartTime(),
                 appointment.getEndTime(),
                 appointment.getAppointmentId()
         );
-
-        if (overlap) throw new BookingConflictException(
+        if (employeeOverlap) throw new BookingConflictException(
                 "Medarbejderen er optaget på det valgte tidspunkt");
+
+        boolean customerOverlap = repo.existsOverlapForCustomer(
+                appointment.getCustomerId(),
+                appointment.getStartTime(),
+                appointment.getEndTime(),
+                appointment.getAppointmentId()
+        );
+        if (customerOverlap) throw new BookingConflictException(
+                "Kunden har allerede en booking på det valgte tidspunkt");
+
         return repo.save(appointment);
     }
 
@@ -66,7 +86,7 @@ public class AppointmentService {
         repo.save(a);
     }
 
-    // UC3 – Find/vis bookinger (forberedt til fremtidig brug)
+    // UC3 – Find/vis bookinger
     public List<Appointment> findByCriteria(
             LocalDateTime fromInclusive,
             LocalDateTime toExclusive,
@@ -82,10 +102,29 @@ public class AppointmentService {
         return repo.findByCriteria(fromInclusive, toExclusive, customerId, employeeId, includeCancelled);
     }
 
-    public List<Appointment> searchByCustomerName(String name) {
-        return repo.findAll().stream()
-                .filter(a -> a.getName().toLowerCase().contains(name.toLowerCase()))
+    public List<String> findBookedTimesForEmployee(int employeeId, LocalDate date) {
+        LocalDateTime from = date.atStartOfDay();
+        LocalDateTime to = date.plusDays(1).atStartOfDay();
+        return repo.findByCriteria(from, to, null, employeeId, false)
+                .stream()
+                .map(a -> a.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")))
                 .toList();
+    }
+
+    // UC3 – Søg på kundenavn
+    public List<Appointment> searchByCustomerName(String name) {
+        if (name == null || name.isBlank())
+            throw new ValidationException("Søgeord må ikke være tomt");
+        return repo.searchByCustomerName(name);
+    }
+
+    // Henter kun aktive (ikke-aflyste) bookinger
+    public List<Appointment> findActive() {
+        return repo.findByCriteria(
+                LocalDate.of(2000, 1, 1).atStartOfDay(),
+                LocalDate.of(2100, 1, 1).atStartOfDay(),
+                null, null, false
+        );
     }
 
     public List<Appointment> findAll() {

@@ -4,6 +4,7 @@ import domain.Employee;
 import org.junit.jupiter.api.Test;
 import repo.EmployeeRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,7 +57,6 @@ class EmployeeServiceTest {
     }
 
     static class FakeRepo implements EmployeeRepository {
-
         int calls = 0;
         Employee resultEmployee = null;
 
@@ -69,6 +69,11 @@ class EmployeeServiceTest {
         @Override
         public void create(Employee employee) {
             // Ikke brugt i disse tests
+        }
+
+        @Override
+        public List<Employee> findAll() {
+            return List.of(); // Ikke brugt i disse tests
         }
     }
 }

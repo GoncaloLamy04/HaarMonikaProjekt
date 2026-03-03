@@ -2,6 +2,7 @@ package infrastructure;
 
 import domain.Appointment;
 import domain.Treatment;
+import exceptions.DataAccessException;
 import repo.AppointmentRepository;
 
 import java.sql.*;
@@ -43,7 +44,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                     }
                 }
             } catch (SQLException e) {
-                throw new RuntimeException("Fejl ved save() INSERT", e);
+                throw new DataAccessException("Fejl ved save() INSERT", e);
             }
         } else {
             String sql = "UPDATE appointments SET customer_id=?, employee_id=?, name=?, email=?, start_time=?, duration_minutes=?, cancelled=? WHERE id=?";
@@ -61,7 +62,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 deleteTreatments(con, appointment.getAppointmentId());
                 saveTreatments(con, appointment.getAppointmentId(), appointment.getTreatments());
             } catch (SQLException e) {
-                throw new RuntimeException("Fejl ved save() UPDATE", e);
+                throw new DataAccessException("Fejl ved save() UPDATE", e);
             }
         }
         return appointment;
@@ -69,34 +70,34 @@ public class SQLAppointmentRepository implements AppointmentRepository {
 
     @Override
     public Optional<Appointment> findById(int id) {
-        String sql = "SELECT id, customer_id, employee_id, name, email, start_time, duration_minutes, cancelled FROM appointments WHERE id = ?";
+        String sql = "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
+                "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
+                "FROM appointments a JOIN employees e ON a.employee_id = e.id WHERE a.id = ?";
         try (Connection con = connector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRow(rs));
-                }
+                if (rs.next()) return Optional.of(mapRow(rs));
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved findById()", e);
+            throw new DataAccessException("Fejl ved findById()", e);
         }
     }
 
     @Override
     public List<Appointment> findAll() {
-        String sql = "SELECT id, customer_id, employee_id, name, email, start_time, duration_minutes, cancelled FROM appointments";
+        String sql = "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
+                "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
+                "FROM appointments a JOIN employees e ON a.employee_id = e.id";
         List<Appointment> appointments = new ArrayList<>();
         try (Connection con = connector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                appointments.add(mapRow(rs));
-            }
+            while (rs.next()) appointments.add(mapRow(rs));
             return appointments;
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved findAll()", e);
+            throw new DataAccessException("Fejl ved findAll()", e);
         }
     }
 
@@ -109,10 +110,13 @@ public class SQLAppointmentRepository implements AppointmentRepository {
             boolean includeCancelled) {
 
         StringBuilder sql = new StringBuilder(
-                "SELECT id, customer_id, employee_id, name, email, start_time, duration_minutes, cancelled FROM appointments WHERE start_time >= ? AND start_time < ?");
-        if (customerId != null) sql.append(" AND customer_id = ?");
-        if (employeeId != null) sql.append(" AND employee_id = ?");
-        if (!includeCancelled) sql.append(" AND cancelled = false");
+                "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
+                        "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
+                        "FROM appointments a JOIN employees e ON a.employee_id = e.id " +
+                        "WHERE a.start_time >= ? AND a.start_time < ?");
+        if (customerId != null) sql.append(" AND a.customer_id = ?");
+        if (employeeId != null) sql.append(" AND a.employee_id = ?");
+        if (!includeCancelled) sql.append(" AND a.cancelled = false");
 
         List<Appointment> result = new ArrayList<>();
         try (Connection con = connector.getConnection();
@@ -127,7 +131,26 @@ public class SQLAppointmentRepository implements AppointmentRepository {
             }
             return result;
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved findByCriteria()", e);
+            throw new DataAccessException("Fejl ved findByCriteria()", e);
+        }
+    }
+
+    @Override
+    public List<Appointment> searchByCustomerName(String name) {
+        String sql = "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
+                "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
+                "FROM appointments a JOIN employees e ON a.employee_id = e.id " +
+                "WHERE a.name LIKE ? AND a.cancelled = false";
+        List<Appointment> results = new ArrayList<>();
+        try (Connection con = connector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, "%" + name + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) results.add(mapRow(rs));
+            }
+            return results;
+        } catch (SQLException e) {
+            throw new DataAccessException("Fejl ved searchByCustomerName()", e);
         }
     }
 
@@ -136,7 +159,8 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                                             LocalDateTime start,
                                             LocalDateTime end,
                                             Integer ignoreAppointmentId) {
-        String sql = "SELECT COUNT(*) FROM appointments WHERE employee_id = ? AND cancelled = false AND start_time < ? AND DATE_ADD(start_time, INTERVAL duration_minutes MINUTE) > ?" +
+        String sql = "SELECT COUNT(*) FROM appointments WHERE employee_id = ? AND cancelled = false " +
+                "AND start_time < ? AND DATE_ADD(start_time, INTERVAL duration_minutes MINUTE) > ?" +
                 (ignoreAppointmentId != null ? " AND id != ?" : "");
         try (Connection con = connector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -148,7 +172,29 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 return rs.next() && rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved existsOverlapForEmployee()", e);
+            throw new DataAccessException("Fejl ved existsOverlapForEmployee()", e);
+        }
+    }
+
+    @Override
+    public boolean existsOverlapForCustomer(int customerId,  // NY
+                                            LocalDateTime start,
+                                            LocalDateTime end,
+                                            Integer ignoreAppointmentId) {
+        String sql = "SELECT COUNT(*) FROM appointments WHERE customer_id = ? AND cancelled = false " +
+                "AND start_time < ? AND DATE_ADD(start_time, INTERVAL duration_minutes MINUTE) > ?" +
+                (ignoreAppointmentId != null ? " AND id != ?" : "");
+        try (Connection con = connector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ps.setTimestamp(2, Timestamp.valueOf(end));
+            ps.setTimestamp(3, Timestamp.valueOf(start));
+            if (ignoreAppointmentId != null) ps.setInt(4, ignoreAppointmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Fejl ved existsOverlapForCustomer()", e);
         }
     }
 
@@ -160,7 +206,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
             ps.setTimestamp(1, Timestamp.valueOf(cutoffEndTime));
             return ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved deleteOlderThan()", e);
+            throw new DataAccessException("Fejl ved deleteOlderThan()", e);
         }
     }
 
@@ -176,6 +222,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 rs.getInt("duration_minutes"),
                 findTreatmentsForAppointment(id)
         );
+        a.setEmployeeName(rs.getString("employee_name")); // NY
         if (rs.getBoolean("cancelled")) a.setCancelled(true);
         return a;
     }
@@ -199,7 +246,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Fejl ved findTreatmentsForAppointment()", e);
+            throw new DataAccessException("Fejl ved findTreatmentsForAppointment()", e);
         }
         return treatments;
     }

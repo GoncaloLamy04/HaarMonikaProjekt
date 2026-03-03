@@ -3,6 +3,7 @@ package service;
 import domain.Employee;
 import repo.EmployeeRepository;
 
+import java.util.List;
 import java.util.Objects;
 
 public class EmployeeService {
@@ -20,6 +21,11 @@ public class EmployeeService {
         return repo.findByUsernameAndPassword(username, password)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid login"));
     }
+
+    public List<Employee> findAll() {
+        return repo.findAll();
+    }
+
     public void createEmployee(String name,
                                String email,
                                String username,

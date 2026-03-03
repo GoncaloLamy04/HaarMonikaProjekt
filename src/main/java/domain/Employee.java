@@ -16,14 +16,25 @@ public class Employee {
 
     }
 
-    public int getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
-    public String getRole() { return role; }
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getRole() {
+        return role;
+    }
 
 
     @Override
     public String toString() {
-        return "Employee{id=" + id + ", name='" + name + "', role='" + role + "'}";
+        return name + " (" + role + ")";
     }
 }
