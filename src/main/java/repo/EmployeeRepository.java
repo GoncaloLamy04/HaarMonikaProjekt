@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface EmployeeRepository {
     Optional<Employee> findByUsernameAndPassword(String username, String password);
+    void create(Employee employee);
 }

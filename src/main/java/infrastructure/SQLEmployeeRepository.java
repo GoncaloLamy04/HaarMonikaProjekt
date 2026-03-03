@@ -18,13 +18,17 @@ public class SQLEmployeeRepository implements EmployeeRepository {
 
     @Override
     public Optional<Employee> findByUsernameAndPassword(String username, String password) {
+
         String sql = "SELECT * FROM employees WHERE username = ? AND password = ?";
 
         try (Connection con = connector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, username);
             ps.setString(2, password);
+
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) {
                 return Optional.of(new Employee(
                         rs.getInt("id"),
@@ -33,25 +37,30 @@ public class SQLEmployeeRepository implements EmployeeRepository {
                         rs.getString("role")
                 ));
             }
+
             return Optional.empty();
+
         } catch (SQLException e) {
             throw new RuntimeException("DB fejl ved login", e);
         }
     }
 
-    // Test klasse, kommer ikke med i commit
-    public static void main(String[] args) {
-        SQLConnector connector = SQLConnector.getInstance(
-        );
+    @Override
+    public void create(Employee employee) {
 
-        SQLEmployeeRepository repo = new SQLEmployeeRepository(connector);
+        String sql = "INSERT INTO employees (name, email, role) VALUES (?, ?, ?)";
 
-        Optional<Employee> result = repo.findByUsernameAndPassword("anna", "password123");
+        try (Connection con = connector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
-        if (result.isPresent()) {
-            System.out.println("Login virker! Fandt: " + result.get().getName());
-        } else {
-            System.out.println("Ingen medarbejder fundet — tjek brugernavn/adgangskode");
+            ps.setString(1, employee.getName());
+            ps.setString(2, employee.getEmail());
+            ps.setString(3, employee.getRole());
+
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB fejl ved oprettelse af medarbejder", e);
         }
     }
 }

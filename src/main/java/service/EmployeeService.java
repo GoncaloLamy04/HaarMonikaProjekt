@@ -20,4 +20,26 @@ public class EmployeeService {
         return repo.findByUsernameAndPassword(username, password)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid login"));
     }
+    public void createEmployee(String name,
+                               String email,
+                               String username,
+                               String password,
+                               String role) {
+
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Name must not be blank");
+        if (email == null || email.isBlank()) throw new IllegalArgumentException("Email must not be blank");
+        if (username == null || username.isBlank()) throw new IllegalArgumentException("Username must not be blank");
+        if (password == null || password.isBlank()) throw new IllegalArgumentException("Password must not be blank");
+        if (role == null || role.isBlank()) throw new IllegalArgumentException("Role must not be blank");
+
+        Employee employee = new Employee(
+                0,
+                name,
+                email,
+                role
+        );
+
+        repo.create(employee);
+    }
 }
+

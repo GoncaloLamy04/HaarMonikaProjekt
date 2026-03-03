@@ -2,6 +2,7 @@ package ui;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -24,6 +25,7 @@ public class MainMenuController {
     @FXML private StackPane contentArea;
     @FXML private Button mainButton;
     @FXML private Button createButton;
+    @FXML private Button employeeButton;
     @FXML private Button logoutButton;
 
     @FXML
@@ -41,8 +43,11 @@ public class MainMenuController {
 
     @FXML
     private void onCreate() {
-        loadView();
+        loadView("create-booking-view.fxml");
     }
+
+    @FXML
+    private void onEmployee() { loadView("employee-view.fxml");}
 
     @FXML
     private void onLogout() {
@@ -62,15 +67,17 @@ public class MainMenuController {
         }
     }
 
-    private void loadView() {
-        String path = "/com/example/haarmonikaprojekt/" + "create-booking-view.fxml";
+    private void loadView(String fxml) {
+        String path = "/com/example/haarmonikaprojekt/" + fxml;
+
         URL resource = getClass().getResource(path);
         if (resource == null) {
             System.err.println("[FXML] Not found: " + path);
             return;
         }
+
         try {
-            javafx.scene.Node view = FXMLLoader.load(resource);
+            Node view = FXMLLoader.load(resource);
             contentArea.getChildren().setAll(view);
         } catch (IOException e) {
             System.err.println("[FXML] Could not load: " + path);
