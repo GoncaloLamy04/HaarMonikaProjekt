@@ -1,8 +1,13 @@
 package ui;
 
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import service.AppointmentService;
+import domain.Appointment;
 import org.w3c.dom.Text;
+
+import java.util.List;
 
 public class CreateBookingController {
 
@@ -42,6 +47,16 @@ public class CreateBookingController {
     private Button deleteButton;
     @FXML
     private Button changeButton;
+
+    //Search
+    @FXML
+    private TextField searchField;
+    @FXML
+    private void handleSearch(){
+        String query = searchField.getText();
+        List<Appointment> results = AppointmentService.searchByCustomerName(query);
+        appointmentTable.setItems(FXCollections.observableArrayList(results));
+    }
 
 
 
