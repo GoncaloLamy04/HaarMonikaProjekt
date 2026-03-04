@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+// Infrastructure-lag: SQL implementering af EmployeeRepository, håndterer login og medarbejder-opslag.
 public class SQLEmployeeRepository implements EmployeeRepository {
 
     private final SQLConnector connector;

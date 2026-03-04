@@ -11,6 +11,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+// App-lag: JavaFX entry point, loader login-skærmen, injicerer afhængigheder via AppFactory
+// og starter en scheduler der automatisk sletter bookinger ældre end 5 år hver 30. dag.
 public class HaarmonikaApplication extends Application {
 
     private ScheduledExecutorService scheduler;

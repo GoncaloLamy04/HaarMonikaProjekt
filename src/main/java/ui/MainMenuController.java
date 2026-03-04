@@ -16,8 +16,12 @@ import service.TreatmentService;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 
+// UI-lag: Håndterer hovedmenuen, navigerer til booking- og medarbejder-siden samt logout.
 public class MainMenuController {
 
     private final EmployeeService employeeService;
@@ -39,9 +43,6 @@ public class MainMenuController {
     }
 
     @FXML private StackPane contentArea;
-    @FXML private Button mainButton;
-    @FXML private Button createButton;
-    @FXML private Button employeeButton;
     @FXML private Button logoutButton;
 
     @FXML
@@ -50,9 +51,23 @@ public class MainMenuController {
     @FXML
     private void onMenu() {
         contentArea.getChildren().clear();
+
+        javafx.scene.layout.VBox vbox = new javafx.scene.layout.VBox(10);
+        vbox.setAlignment(javafx.geometry.Pos.CENTER);
+
         Label welcome = new Label("Velkommen til Hårmoni'ka booking system");
-        welcome.setStyle("-fx-font-size: 21px;");
-        contentArea.getChildren().add(welcome);
+        welcome.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+
+        Label employeeLabel = new Label("Logget ind som: " + loggedInEmployee.getName());
+        employeeLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #555555;");
+
+        Label dateLabel = new Label("Dato: " + LocalDate.now()
+                .format(DateTimeFormatter.ofPattern("dd. MMMM yyyy",
+                        Locale.forLanguageTag("da"))));
+        dateLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #777777;");
+
+        vbox.getChildren().addAll(welcome, employeeLabel, dateLabel);
+        contentArea.getChildren().add(vbox);
     }
 
     @FXML
@@ -89,19 +104,24 @@ public class MainMenuController {
             return;
         }
         try {
-            FXMLLoader loader = new FXMLLoader(resource);
-            loader.setControllerFactory(type -> {
-                if (type == BookingController.class)
-                    return new BookingController(appointmentService, treatmentService,
-                            customerService, employeeService, loggedInEmployee);
-                if (type == EmployeeController.class)
-                    return new EmployeeController(employeeService);
-                try { return type.getDeclaredConstructor().newInstance(); }
-                catch (Exception e) { throw new RuntimeException(e); }
-            });
+            FXMLLoader loader = getFxmlLoader(resource);
             contentArea.getChildren().setAll((Node) loader.load());
         } catch (IOException e) {
             System.err.println("[FXML] Could not load: " + path + " – " + e.getMessage());
         }
+    }
+
+    private FXMLLoader getFxmlLoader(URL resource) {
+        FXMLLoader loader = new FXMLLoader(resource);
+        loader.setControllerFactory(type -> {
+            if (type == BookingController.class)
+                return new BookingController(appointmentService, treatmentService,
+                        customerService, employeeService, loggedInEmployee);
+            if (type == EmployeeController.class)
+                return new EmployeeController(employeeService);
+            try { return type.getDeclaredConstructor().newInstance(); }
+            catch (Exception e) { throw new RuntimeException(e); }
+        });
+        return loader;
     }
 }

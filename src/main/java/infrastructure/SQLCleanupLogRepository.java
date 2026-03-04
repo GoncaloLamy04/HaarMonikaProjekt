@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+// Infrastructure-lag: SQL implementering af CleanupLogRepository, logger clean-up-resultater til databasen.
 public class SQLCleanupLogRepository implements CleanupLogRepository {
 
     private final SQLConnector connector;

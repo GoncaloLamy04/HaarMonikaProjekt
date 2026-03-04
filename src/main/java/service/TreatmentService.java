@@ -6,6 +6,7 @@ import repo.TreatmentRepository;
 import java.util.List;
 import java.util.Objects;
 
+// Service-lag: Håndterer forretningslogik for behandlinger, henter alle tilgængelige behandlinger.
 public class TreatmentService {
 
     private final TreatmentRepository repo;

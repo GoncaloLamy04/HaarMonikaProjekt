@@ -1,6 +1,7 @@
 package service;
 
 import domain.Employee;
+import exceptions.ValidationException;
 import org.junit.jupiter.api.Test;
 import repo.EmployeeRepository;
 
@@ -28,32 +29,26 @@ class EmployeeServiceTest {
 
     @Test
     void login_throws_whenInvalidCredentials() {
-        // Arrange
         FakeRepo repo = new FakeRepo();
         repo.resultEmployee = null;
         EmployeeService service = new EmployeeService(repo);
 
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> service.login("monika", "wrong"));
+        assertThrows(ValidationException.class, () -> service.login("monika", "wrong"));
         assertEquals(1, repo.calls);
     }
 
     @Test
     void login_throws_whenUsernameBlank() {
-        // Arrange
         EmployeeService service = new EmployeeService(new FakeRepo());
 
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> service.login(" ", "x"));
+        assertThrows(ValidationException.class, () -> service.login(" ", "x"));
     }
 
     @Test
     void login_throws_whenPasswordBlank() {
-        // Arrange
         EmployeeService service = new EmployeeService(new FakeRepo());
 
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> service.login("x", " "));
+        assertThrows(ValidationException.class, () -> service.login("x", " "));
     }
 
     static class FakeRepo implements EmployeeRepository {

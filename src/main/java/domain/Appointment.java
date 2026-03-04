@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
+// Domain-lag: Repræsenterer en booking med kunde, medarbejder, tidspunkt og behandlinger.
 public class Appointment {
 
     private final int appointmentId;
@@ -50,6 +51,12 @@ public class Appointment {
 
         this.treatments = List.copyOf(Objects.requireNonNull(treatments, "treatments"));
         this.cancelled = false;
+    }
+
+    public AppointmentStatus getStatus() {
+        if (cancelled) return AppointmentStatus.CANCELLED;
+        if (getEndTime().isBefore(LocalDateTime.now())) return AppointmentStatus.EXPIRED;
+        return AppointmentStatus.ACTIVE;
     }
 
     public int getAppointmentId() { return appointmentId; }

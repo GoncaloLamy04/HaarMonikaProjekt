@@ -5,8 +5,7 @@ import domain.Customer;
 import java.util.List;
 import java.util.Optional;
 
-// Persistens port til Customer
-
+// Repository-lag (interface): Definerer kontrakt for datahåndtering af kunder.
 public interface CustomerRepository {
     List<Customer> findAll();
     Optional<Customer> findByEmail(String email);

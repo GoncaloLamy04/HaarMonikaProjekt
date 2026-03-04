@@ -1,6 +1,7 @@
 package ui;
 
 import domain.Employee;
+import exceptions.ValidationException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -16,6 +17,7 @@ import service.TreatmentService;
 import java.io.IOException;
 import java.util.Objects;
 
+// UI-lag: Håndterer login-skærmen, validerer brugernavn og password og navigerer til hovedmenuen.
 public class LoginController {
 
     private final EmployeeService employeeService;
@@ -72,7 +74,7 @@ public class LoginController {
             stage.setScene(new Scene(loader.load(), 900, 600));
             stage.show();
 
-        } catch (IllegalArgumentException e) {
+        } catch (ValidationException e) {
             labelException.setText("Forkert brugernavn eller adgangskode");
         }
     }

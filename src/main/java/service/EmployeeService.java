@@ -1,11 +1,13 @@
 package service;
 
 import domain.Employee;
+import exceptions.ValidationException;
 import repo.EmployeeRepository;
 
 import java.util.List;
 import java.util.Objects;
 
+// Service-lag: Håndterer forretningslogik for medarbejdere (login og opslag).
 public class EmployeeService {
 
     private final EmployeeRepository repo;
@@ -15,11 +17,11 @@ public class EmployeeService {
     }
 
     public Employee login(String username, String password) {
-        if (username == null || username.isBlank()) throw new IllegalArgumentException("username must not be blank");
-        if (password == null || password.isBlank()) throw new IllegalArgumentException("password must not be blank");
+        if (username == null || username.isBlank()) throw new ValidationException("Brugernavn må ikke være tomt");
+        if (password == null || password.isBlank()) throw new ValidationException("Adgangskode må ikke være tom");
 
         return repo.findByUsernameAndPassword(username, password)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid login"));
+                .orElseThrow(() -> new ValidationException("Forkert brugernavn eller adgangskode"));
     }
 
     public List<Employee> findAll() {

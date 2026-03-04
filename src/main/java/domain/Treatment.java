@@ -1,5 +1,6 @@
 package domain;
 
+// Domain-lag: Repræsenterer en behandling med type og varighed i minutter.
 public class Treatment {
     private final int id;
     private final String treatmentType;

@@ -4,9 +4,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextField;
-import org.w3c.dom.Text;
 import service.EmployeeService;
 
+// UI-lag: Håndterer medarbejder-siden, viser og opretter medarbejdere.
 public class EmployeeController {
 
     private EmployeeService employeeService;
@@ -50,6 +50,4 @@ public class EmployeeController {
     @FXML
     private void onCreate() {
     }
-
-
 }

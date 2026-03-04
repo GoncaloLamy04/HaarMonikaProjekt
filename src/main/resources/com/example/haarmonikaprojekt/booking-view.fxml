@@ -79,6 +79,10 @@
                      <Label text=" "/>
                      <CheckBox fx:id="filterCancelled" text="Kun aflyste"/>
                   </VBox>
+                  <VBox spacing="3.0">
+                     <Label text=" "/>
+                     <CheckBox fx:id="filterExpired" text="Kun udløbede"/>
+                  </VBox>
                </children>
             </HBox>
 

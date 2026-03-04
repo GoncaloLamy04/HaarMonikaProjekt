@@ -6,7 +6,8 @@ import repo.CleanupLogRepository;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-// UC6: slet aftaler ældre end cutoff
+// Service-lag: UC6, Håndterer automatisk sletning af bookinger ældre end 5 år.
+// Logger antal slettede rækker ved succes og fejlbesked ved fejl, uden at systemet crasher.
 public class CleanupService {
 
     private final AppointmentRepository appointmentRepo;

@@ -1,6 +1,7 @@
 package service;
 
 import domain.Appointment;
+import domain.AppointmentStatus;
 import exceptions.BookingConflictException;
 import exceptions.ValidationException;
 import repo.AppointmentRepository;
@@ -11,6 +12,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
+// Service-lag: Håndterer forretningslogik for bookinger — validerer input, tjekker overlap for
+// både medarbejder og kunde, og sender filtrering og søgning videre til SQL-laget via repository.
 public class AppointmentService {
 
     private final AppointmentRepository repo;
@@ -46,7 +49,7 @@ public class AppointmentService {
     }
 
     // UC4 – Ret booking
-    public Appointment update(Appointment appointment) {
+    public void update(Appointment appointment) {
         Objects.requireNonNull(appointment, "appointment");
         if (appointment.getAppointmentId() <= 0)
             throw new ValidationException("Booking-id er ugyldigt");
@@ -71,7 +74,7 @@ public class AppointmentService {
         if (customerOverlap) throw new BookingConflictException(
                 "Kunden har allerede en booking på det valgte tidspunkt");
 
-        return repo.save(appointment);
+        repo.save(appointment);
     }
 
     // UC5 – Aflys booking
@@ -111,17 +114,35 @@ public class AppointmentService {
                 .toList();
     }
 
+    public List<Appointment> findByStatus(boolean includeCancelled, boolean includeExpired,
+                                          LocalDateTime fromDt, LocalDateTime toDt, Integer employeeId) {
+        List<Appointment> results = repo.findByCriteria(fromDt, toDt, null, employeeId, includeCancelled || includeExpired);
+
+        if (!includeCancelled && !includeExpired) {
+            return results.stream()
+                    .filter(a -> a.getStatus() == AppointmentStatus.ACTIVE)
+                    .toList();
+        }
+        return results.stream()
+                .filter(a -> (includeCancelled && a.getStatus() == AppointmentStatus.CANCELLED)
+                        || (includeExpired && a.getStatus() == AppointmentStatus.EXPIRED))
+                .toList();
+    }
+
     // UC3 – Søg på kundenavn
     public List<Appointment> searchByCustomerName(String name) {
         if (name == null || name.isBlank())
             throw new ValidationException("Søgeord må ikke være tomt");
-        return repo.searchByCustomerName(name);
+        return repo.searchByCustomerName(name)
+                .stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.ACTIVE)
+                .toList();
     }
 
-    // Henter kun aktive (ikke-aflyste) bookinger
+    // Henter kun aktive bookinger fra i dag og frem
     public List<Appointment> findActive() {
         return repo.findByCriteria(
-                LocalDate.of(2000, 1, 1).atStartOfDay(),
+                LocalDate.now().atStartOfDay(),
                 LocalDate.of(2100, 1, 1).atStartOfDay(),
                 null, null, false
         );

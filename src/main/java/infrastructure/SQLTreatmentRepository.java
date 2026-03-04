@@ -8,6 +8,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+// Infrastructure-lag: SQL implementering af TreatmentRepository, henter behandlinger fra databasen.
 public class SQLTreatmentRepository implements TreatmentRepository {
 
     private final SQLConnector connector;

@@ -1,9 +1,6 @@
 package ui;
 
-import domain.Appointment;
-import domain.Customer;
-import domain.Employee;
-import domain.Treatment;
+import domain.*;
 import exceptions.BookingConflictException;
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
@@ -27,6 +24,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+// UI-lag: Håndterer al booking-funktionalitet (opret, ret, aflys, søg og filtrer bookinger).
 public class BookingController {
 
     private final AppointmentService appointmentService;
@@ -60,6 +58,7 @@ public class BookingController {
     @FXML private DatePicker filterTo;
     @FXML private ComboBox<Employee> filterEmployee;
     @FXML private CheckBox filterCancelled;
+    @FXML private CheckBox filterExpired;
 
     @FXML private TableView<Appointment> appointmentTable;
     @FXML private TableColumn<Appointment, Integer> colId;
@@ -144,11 +143,32 @@ public class BookingController {
                 new SimpleStringProperty(data.getValue().getStartTime().format(
                         DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))));
         colStatus.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().isCancelled() ? "Aflyst" : "Aktiv"));
+                new SimpleStringProperty(switch (data.getValue().getStatus()) {
+                    case ACTIVE -> "Aktiv";
+                    case CANCELLED -> "Aflyst";
+                    case EXPIRED -> "Udløbet";
+                }));
         colEmployee.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().getEmployeeName()));
 
         appointmentTable.setItems(appointments);
+
+        appointmentTable.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Appointment item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setStyle("");
+                } else {
+                    switch (item.getStatus()) {
+                        case CANCELLED -> setStyle("-fx-background-color: #ffcccc;");
+                        case EXPIRED -> setStyle("-fx-background-color: #eeeeee;");
+                        case ACTIVE -> setStyle(getIndex() % 2 == 0 ? "-fx-background-color: #f0f4ff;" : "");
+                    }
+                }
+            }
+        });
+
         loadAppointments();
 
         createButton.disableProperty().bind(
@@ -179,8 +199,8 @@ public class BookingController {
         LocalDate to = filterTo.getValue();
         Employee selectedEmployee = filterEmployee.getValue();
         boolean includeCancelled = filterCancelled.isSelected();
+        boolean includeExpired = filterExpired.isSelected();
 
-        // Hvis ingen datoer er valgt bruges hele perioden
         LocalDateTime fromDt = from != null
                 ? from.atStartOfDay()
                 : LocalDate.of(2000, 1, 1).atStartOfDay();
@@ -196,15 +216,8 @@ public class BookingController {
         Integer employeeId = selectedEmployee != null ? selectedEmployee.getId() : null;
 
         try {
-            List<Appointment> results = appointmentService.findByCriteria(
-                    fromDt, toDt, null, employeeId, includeCancelled);
-
-            // Hvis "Vis aflyste" er valgt, filtrer så KUN aflyste vises
-            if (includeCancelled) {
-                results = results.stream()
-                        .filter(Appointment::isCancelled)
-                        .toList();
-            }
+            List<Appointment> results = appointmentService.findByStatus(
+                    includeCancelled, includeExpired, fromDt, toDt, employeeId);
             appointments.setAll(results);
             labelException.setText("");
         } catch (ValidationException e) {
@@ -224,6 +237,7 @@ public class BookingController {
         filterTo.setValue(null);
         filterEmployee.setValue(null);
         filterCancelled.setSelected(false);
+        filterExpired.setSelected(false);
         loadAppointments();
         labelException.setText("");
     }
@@ -251,7 +265,7 @@ public class BookingController {
                         emailTxt.getText(), nameTxt.getText(),
                         startTime, duration, List.of(selectedTreatment)
                 );
-                Appointment saved = appointmentService.update(updated);
+                appointmentService.update(updated);
                 selectedForEdit = null;
                 createButton.setText("Opret booking");
             } else {
@@ -323,6 +337,7 @@ public class BookingController {
         emailTxt.clear();
         timeCombo.setValue(null);
         timeDate.setValue(null);
+        timeDate.getEditor().clear();
         treatmentCombo.setValue(null);
         selectedForEdit = null;
         createButton.setText("Opret booking");
@@ -331,12 +346,12 @@ public class BookingController {
     @FXML
     private void handleSearch() {
         String query = searchField.getText();
-        List<Appointment> results = appointmentService.searchByCustomerName(query)
-                .stream()
-                .filter(a -> !a.isCancelled())
-                .toList();
-        appointments.setAll(results);
-        appointmentTable.setItems(appointments);
+        if (!query.isEmpty()) {
+            appointments.setAll(appointmentService.searchByCustomerName(query));
+            appointmentTable.setItems(appointments);
+        } else {
+            labelException.setText("Søgeord må ikke være tomt!");
+        }
     }
 
     @FXML

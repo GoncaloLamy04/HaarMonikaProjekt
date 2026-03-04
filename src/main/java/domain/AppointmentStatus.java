@@ -1,7 +1,6 @@
 package domain;
 
-// Bruges ikke endnu
-// Forberedt til DB status senere
+// Domain-lag: Definerer mulige statusser for en booking (ACTIVE, CANCELLED og EXPIRED).
 public enum AppointmentStatus {
     ACTIVE,
     CANCELLED,

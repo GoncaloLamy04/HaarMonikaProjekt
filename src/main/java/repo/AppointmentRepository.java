@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+// Repository-lag (interface): Definerer kontrakt for datahåndtering af bookinger.
 public interface AppointmentRepository {
 
     Appointment save(Appointment appointment);

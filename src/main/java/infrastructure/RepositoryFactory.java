@@ -2,6 +2,7 @@ package infrastructure;
 
 import repo.*;
 
+// Infrastructure-lag: Factory der opretter de konkrete SQL repositories med en delt SQLConnector.
 public class RepositoryFactory {
 
     private final SQLConnector connector;

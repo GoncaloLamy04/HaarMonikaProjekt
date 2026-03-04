@@ -3,7 +3,7 @@ package com.example.haarmonikaprojekt;
 import infrastructure.RepositoryFactory;
 import service.*;
 
-// Opretter og kobler alle afhængigheder et sted, holder HaarmonikaApplication ren
+// App-lag: Opretter og kobler alle services og repositories, holder HaarmonikaApplication ren (SRP).
 public class AppFactory {
 
     private final EmployeeService employeeService;

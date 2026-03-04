@@ -11,9 +11,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+// Infrastructure-lag: SQL implementering af AppointmentRepository, håndterer INSERT/UPDATE via
+// save(), dynamisk filtrering via findByCriteria() og overlap-tjek direkte i SQL.
 public class SQLAppointmentRepository implements AppointmentRepository {
 
     private final SQLConnector connector;
+
+    private static final String BASE_SELECT =
+            "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
+                    "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
+                    "FROM appointments a JOIN employees e ON a.employee_id = e.id";
 
     public SQLAppointmentRepository(SQLConnector connector) {
         this.connector = connector;
@@ -25,13 +32,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
             String sql = "INSERT INTO appointments (customer_id, employee_id, name, email, start_time, duration_minutes, cancelled) VALUES (?, ?, ?, ?, ?, ?, ?)";
             try (Connection con = connector.getConnection();
                  PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                ps.setInt(1, appointment.getCustomerId());
-                ps.setInt(2, appointment.getEmployeeId());
-                ps.setString(3, appointment.getName());
-                ps.setString(4, appointment.getEmail());
-                ps.setTimestamp(5, Timestamp.valueOf(appointment.getStartTime()));
-                ps.setInt(6, appointment.getDurationMinutes());
-                ps.setBoolean(7, appointment.isCancelled());
+                bindAppointmentParams(ps, appointment);
                 ps.executeUpdate();
                 try (ResultSet keys = ps.getGeneratedKeys()) {
                     if (keys.next()) {
@@ -50,13 +51,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
             String sql = "UPDATE appointments SET customer_id=?, employee_id=?, name=?, email=?, start_time=?, duration_minutes=?, cancelled=? WHERE id=?";
             try (Connection con = connector.getConnection();
                  PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setInt(1, appointment.getCustomerId());
-                ps.setInt(2, appointment.getEmployeeId());
-                ps.setString(3, appointment.getName());
-                ps.setString(4, appointment.getEmail());
-                ps.setTimestamp(5, Timestamp.valueOf(appointment.getStartTime()));
-                ps.setInt(6, appointment.getDurationMinutes());
-                ps.setBoolean(7, appointment.isCancelled());
+                bindAppointmentParams(ps, appointment);
                 ps.setInt(8, appointment.getAppointmentId());
                 ps.executeUpdate();
                 deleteTreatments(con, appointment.getAppointmentId());
@@ -68,11 +63,19 @@ public class SQLAppointmentRepository implements AppointmentRepository {
         return appointment;
     }
 
+    private void bindAppointmentParams(PreparedStatement ps, Appointment appointment) throws SQLException {
+        ps.setInt(1, appointment.getCustomerId());
+        ps.setInt(2, appointment.getEmployeeId());
+        ps.setString(3, appointment.getName());
+        ps.setString(4, appointment.getEmail());
+        ps.setTimestamp(5, Timestamp.valueOf(appointment.getStartTime()));
+        ps.setInt(6, appointment.getDurationMinutes());
+        ps.setBoolean(7, appointment.isCancelled());
+    }
+
     @Override
     public Optional<Appointment> findById(int id) {
-        String sql = "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
-                "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
-                "FROM appointments a JOIN employees e ON a.employee_id = e.id WHERE a.id = ?";
+        String sql = BASE_SELECT + " WHERE a.id = ?";
         try (Connection con = connector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -87,12 +90,9 @@ public class SQLAppointmentRepository implements AppointmentRepository {
 
     @Override
     public List<Appointment> findAll() {
-        String sql = "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
-                "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
-                "FROM appointments a JOIN employees e ON a.employee_id = e.id";
         List<Appointment> appointments = new ArrayList<>();
         try (Connection con = connector.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(BASE_SELECT);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) appointments.add(mapRow(rs));
             return appointments;
@@ -109,11 +109,8 @@ public class SQLAppointmentRepository implements AppointmentRepository {
             Integer employeeId,
             boolean includeCancelled) {
 
-        StringBuilder sql = new StringBuilder(
-                "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
-                        "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
-                        "FROM appointments a JOIN employees e ON a.employee_id = e.id " +
-                        "WHERE a.start_time >= ? AND a.start_time < ?");
+        StringBuilder sql = new StringBuilder(BASE_SELECT +
+                " WHERE a.start_time >= ? AND a.start_time < ?");
         if (customerId != null) sql.append(" AND a.customer_id = ?");
         if (employeeId != null) sql.append(" AND a.employee_id = ?");
         if (!includeCancelled) sql.append(" AND a.cancelled = false");
@@ -125,7 +122,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
             ps.setTimestamp(i++, Timestamp.valueOf(fromInclusive));
             ps.setTimestamp(i++, Timestamp.valueOf(toExclusive));
             if (customerId != null) ps.setInt(i++, customerId);
-            if (employeeId != null) ps.setInt(i++, employeeId);
+            if (employeeId != null) ps.setInt(i, employeeId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) result.add(mapRow(rs));
             }
@@ -137,10 +134,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
 
     @Override
     public List<Appointment> searchByCustomerName(String name) {
-        String sql = "SELECT a.id, a.customer_id, a.employee_id, e.name as employee_name, " +
-                "a.name, a.email, a.start_time, a.duration_minutes, a.cancelled " +
-                "FROM appointments a JOIN employees e ON a.employee_id = e.id " +
-                "WHERE a.name LIKE ? AND a.cancelled = false";
+        String sql = BASE_SELECT + " WHERE a.name LIKE ? AND a.cancelled = false";
         List<Appointment> results = new ArrayList<>();
         try (Connection con = connector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -155,38 +149,25 @@ public class SQLAppointmentRepository implements AppointmentRepository {
     }
 
     @Override
-    public boolean existsOverlapForEmployee(int employeeId,
-                                            LocalDateTime start,
-                                            LocalDateTime end,
-                                            Integer ignoreAppointmentId) {
-        String sql = "SELECT COUNT(*) FROM appointments WHERE employee_id = ? AND cancelled = false " +
-                "AND start_time < ? AND DATE_ADD(start_time, INTERVAL duration_minutes MINUTE) > ?" +
-                (ignoreAppointmentId != null ? " AND id != ?" : "");
-        try (Connection con = connector.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, employeeId);
-            ps.setTimestamp(2, Timestamp.valueOf(end));
-            ps.setTimestamp(3, Timestamp.valueOf(start));
-            if (ignoreAppointmentId != null) ps.setInt(4, ignoreAppointmentId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() && rs.getInt(1) > 0;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Fejl ved existsOverlapForEmployee()", e);
-        }
+    public boolean existsOverlapForEmployee(int employeeId, LocalDateTime start,
+                                            LocalDateTime end, Integer ignoreAppointmentId) {
+        return existsOverlap("employee_id", employeeId, start, end, ignoreAppointmentId);
     }
 
     @Override
-    public boolean existsOverlapForCustomer(int customerId,  // NY
-                                            LocalDateTime start,
-                                            LocalDateTime end,
-                                            Integer ignoreAppointmentId) {
-        String sql = "SELECT COUNT(*) FROM appointments WHERE customer_id = ? AND cancelled = false " +
+    public boolean existsOverlapForCustomer(int customerId, LocalDateTime start,
+                                            LocalDateTime end, Integer ignoreAppointmentId) {
+        return existsOverlap("customer_id", customerId, start, end, ignoreAppointmentId);
+    }
+
+    private boolean existsOverlap(String column, int id, LocalDateTime start,
+                                  LocalDateTime end, Integer ignoreAppointmentId) {
+        String sql = "SELECT COUNT(*) FROM appointments WHERE " + column + " = ? AND cancelled = false " +
                 "AND start_time < ? AND DATE_ADD(start_time, INTERVAL duration_minutes MINUTE) > ?" +
                 (ignoreAppointmentId != null ? " AND id != ?" : "");
         try (Connection con = connector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
+            ps.setInt(1, id);
             ps.setTimestamp(2, Timestamp.valueOf(end));
             ps.setTimestamp(3, Timestamp.valueOf(start));
             if (ignoreAppointmentId != null) ps.setInt(4, ignoreAppointmentId);
@@ -194,7 +175,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 return rs.next() && rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
-            throw new DataAccessException("Fejl ved existsOverlapForCustomer()", e);
+            throw new DataAccessException("Fejl ved existsOverlap()", e);
         }
     }
 
@@ -222,7 +203,7 @@ public class SQLAppointmentRepository implements AppointmentRepository {
                 rs.getInt("duration_minutes"),
                 findTreatmentsForAppointment(id)
         );
-        a.setEmployeeName(rs.getString("employee_name")); // NY
+        a.setEmployeeName(rs.getString("employee_name"));
         if (rs.getBoolean("cancelled")) a.setCancelled(true);
         return a;
     }

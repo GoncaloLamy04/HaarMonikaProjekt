@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+// Infrastructure-lag: SQL implementering af CustomerRepository, håndterer kunde-opslag og oprettelse.
 public class SQLCustomerRepository implements CustomerRepository {
 
     private final SQLConnector connector;

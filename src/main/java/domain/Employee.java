@@ -1,5 +1,6 @@
 package domain;
 
+// Domain-lag: Repræsenterer en medarbejder med navn, email, rolle og login-oplysninger.
 public class Employee {
 
     private final int id;

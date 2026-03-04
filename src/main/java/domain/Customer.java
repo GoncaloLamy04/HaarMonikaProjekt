@@ -1,5 +1,6 @@
 package domain;
 
+// Domain-lag: Repræsenterer en kunde med navn og email.
 public class Customer {
 
     private final int id;

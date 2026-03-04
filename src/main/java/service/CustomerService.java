@@ -1,5 +1,6 @@
 package service;
 
+// Service-lag: Håndterer forretningslogik for kunder (finder eller opretter kunde baseret på email).
 import domain.Customer;
 import repo.CustomerRepository;
 import java.util.Objects;
